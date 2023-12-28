@@ -39,7 +39,7 @@ public:
     void statistic();
 
 protected:
-    int fd_cache, fd_disk,fd_cache_w;
+    int fd_cache, fd_disk,fd_cache_w;//∂¡ª∫¥Ê°¢¥≈≈Ã°¢–¥ª∫¥Ê
 
     long long curKey;
     vector<long long> free_cache;
@@ -83,6 +83,7 @@ protected:
 
     virtual bool isCached(const ll &key) = 0;
     virtual void accessKey(const ll &key, const bool &isGet) = 0;
+    virtual void accessKey_W(const ll &key, const bool &isGet) = 0;
     virtual ll getVictim() = 0;
 };
 
@@ -125,7 +126,7 @@ bool Sl::writeItem(vector<ll> &keys)
         if (isCached(keys[i]))
         {
             st.write_hit_nums += 1;
-            accessKey(keys[i], false); // [lirs] cache_map.Add(keys[i],0);
+            accessKey_W(keys[i], false); // [lirs] cache_map.Add(keys[i],0);
             coverageCache(&chunk_map[keys[i]]);
             keys[i] = -1;
         }
@@ -136,7 +137,7 @@ bool Sl::writeItem(vector<ll> &keys)
         if (keys[i] != -1)
         {
             isTraceHit = false;
-            accessKey(keys[i], false); // [lirs] cache_map.Add(keys[i],0);
+            accessKey_W(keys[i], false); // [lirs] cache_map.Add(keys[i],0);
             writeCache(keys[i]);
         }
     }
@@ -385,7 +386,7 @@ void Sl::odirectWrite(bool isCache, const long long &offset, const long long &si
     assert(offset != -1);
     int fd = -1;
     if (isCache)
-        fd = fd_cache;
+        fd = fd_cache_w;
     else
         fd = fd_disk;
     // cout<<filePath<<endl;
