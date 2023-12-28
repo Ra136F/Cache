@@ -305,6 +305,7 @@ void Sl::closeFile()
 {
     close(fd_cache);
     close(fd_disk);
+    close(fd_cache_w);
 }
 
 void Sl::printFreeCache()
