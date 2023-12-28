@@ -11,8 +11,10 @@ public:
     RandomSl();
 private:
     RANDOM cache_map;
+    RANDOM cache_map_w;
     bool isCached(const ll &key);
     void accessKey(const ll &key, const bool &isGet);
+    void accessKey_W(const ll &key, const bool &isGet);
     ll getVictim();
 };
 
@@ -29,6 +31,11 @@ bool RandomSl::isCached(const ll &key)
 void RandomSl::accessKey(const ll &key, const bool &isGet)
 {
     cache_map.Touch(key);
+}
+
+void RandomSl::accessKey_W(const ll &key, const bool &isGet)
+{
+    cache_map_w.Touch(key);
 }
 
 ll RandomSl::getVictim(){

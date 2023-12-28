@@ -14,9 +14,10 @@ private:
     template <typename Key, typename Value>
     using fifo_cache_t = typename caches::fixed_sized_cache<Key, Value, caches::FIFO>;
     fifo_cache_t<long long, bool> cache_map{CACHE_SIZE};
-
+    fifo_cache_t<long long, bool> cache_map_w{CACHE_SIZE};
     bool isCached(const ll &key);
     void accessKey(const ll &key, const bool &isGet);
+    void accessKey_W(const ll &key, const bool &isGet);
     ll getVictim();
 };
 
@@ -33,6 +34,10 @@ bool FifoSl::isCached(const ll &key)
 void FifoSl::accessKey(const ll &key, const bool &isGet)
 {
     cache_map.Put(key, 0);
+}
+void FifoSl::accessKey_W(const ll &key, const bool &isGet)
+{
+    cache_map_w.Put(key, 0);
 }
 
 ll FifoSl::getVictim()

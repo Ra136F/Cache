@@ -12,9 +12,10 @@ private:
     template <typename Key, typename Value>
     using lfu_cache_t = typename caches::fixed_sized_cache<Key, Value,caches::LFU>;
     lfu_cache_t<long long, bool> cache_map{CACHE_SIZE};
-
+     lfu_cache_t<long long, bool> cache_map_w{CACHE_SIZE};
     bool isCached(const ll &key);
     void accessKey(const ll &key, const bool &isGet);
+    void accessKey_W(const ll &key, const bool &isGet);
     ll getVictim();
 };
 
@@ -30,6 +31,11 @@ bool LfuSl::isCached(const ll &key)
 void LfuSl::accessKey(const ll &key, const bool &isGet)
 {
     cache_map.Put(key, 0);
+}
+
+void LfuSl::accessKey_W(const ll &key, const bool &isGet)
+{
+    cache_map_w.Put(key, 0);
 }
 
 ll LfuSl::getVictim(){

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-save_directory="../results/"
+save_directory="../result/"
 cpu_usage_addr="${save_directory}cpu_usage.log"
 mem_used_addr="${save_directory}mem_used.log"
 disk_read_wrtn_addr="${save_directory}disk_read_wrtn.log"

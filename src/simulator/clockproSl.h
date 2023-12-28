@@ -13,9 +13,10 @@ public:
 
 private:
     clockpro::Cache<long long, bool> cache_map{CACHE_SIZE};
-
+    clockpro::Cache<long long, bool> cache_map_w{CACHE_SIZE};
     bool isCached(const ll &key);
     void accessKey(const ll &key, const bool &isGet);
+    void accessKey_W(const ll &key, const bool &isGet);
     ll getVictim();
     vector<ll> getVictimList(); // special for clockpro: may multi-victims at one access because of test period
     void writeCache(const ll &key);
@@ -34,6 +35,10 @@ bool ClockproSl::isCached(const ll &key)
 void ClockproSl::accessKey(const ll &key, const bool &isGet)
 {
     cache_map.Set(key, 0);
+}
+void ClockproSl::accessKey_W(const ll &key, const bool &isGet)
+{
+    cache_map_w.Set(key, 0);
 }
 
 ll ClockproSl::getVictim()

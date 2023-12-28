@@ -11,9 +11,10 @@ public:
 
 private:
     LIRS cache_map;
-
+     LIRS cache_map_w;
     bool isCached(const ll &key);
     void accessKey(const ll &key, const bool &isGet);
+     void accessKey_W(const ll &key, const bool &isGet);
     ll getVictim();
 };
 
@@ -37,6 +38,17 @@ void LirsSl::accessKey(const ll &key, const bool &isGet)
     else
     {
         cache_map.Add(key, 0);
+    }
+}
+void LirsSl::accessKey_W(const ll &key, const bool &isGet)
+{
+    if (isGet)
+    {
+        cache_map_w.Get(key);
+    }
+    else
+    {
+        cache_map_w.Add(key, 0);
     }
 }
 
