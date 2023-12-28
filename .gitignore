@@ -1,0 +1,6 @@
+result/cpu_usage.log
+result/disk_read_wrtn.log
+result/mem_used.log
+result/statistic.txt
+result/**
+trace/**
