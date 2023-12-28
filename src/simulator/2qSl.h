@@ -12,9 +12,10 @@ public:
 
 private:
     cache_2q<ll> cache_map{CACHE_SIZE};
-
+    cache_2q<ll> cache_map_w{CACHE_SIZE};
     bool isCached(const ll &key);
     void accessKey(const ll &key, const bool &isGet);
+    void accessKey_W(const ll &key, const bool &isGet);
     ll getVictim();
     void writeCache(const ll &key); // special for 2q: may replace when cache is not full because of A1out
 
@@ -33,6 +34,10 @@ bool TqSl::isCached(const ll &key)
 void TqSl::accessKey(const ll &key, const bool &isGet)
 {
     cache_map.touch(key);
+}
+void TqSl::accessKey_W(const ll &key, const bool &isGet)
+{
+    cache_map_w.touch(key);
 }
 
 ll TqSl::getVictim()

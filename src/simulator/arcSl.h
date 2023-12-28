@@ -11,9 +11,10 @@ public:
 
 private:
     ARC cache_map;
-
+    ARC cache_map_w;
     bool isCached(const ll &key);
     void accessKey(const ll &key, const bool &isGet);
+    void accessKey_W(const ll &key, const bool &isGet);
     ll getVictim();
 };
 
@@ -30,6 +31,10 @@ bool ArcSl::isCached(const ll &key)
 void ArcSl::accessKey(const ll &key, const bool &isGet)
 {
     cache_map.arc_lookup(key);
+}
+void ArcSl::accessKey_W(const ll &key, const bool &isGet)
+{
+    cache_map_w.arc_lookup(key);
 }
 
 ll ArcSl::getVictim()
