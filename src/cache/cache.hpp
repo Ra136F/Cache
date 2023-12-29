@@ -83,6 +83,7 @@ class fixed_sized_cache
                 Erase(disp_candidate_key);
             }
 
+            
             Insert(key, value);
 
         }

@@ -107,7 +107,7 @@ bool Sl::readItem(vector<ll> &keys)
             // ͳ��������
             isReadCache=1;
             st.read_hit_nums += 1;
-          
+            cout<<"读命中读缓冲区"<<endl;
             accessKey(keys[i], true); // [lirs] cache_map.Get(keys[i]);
             readCache(chunk_map[keys[i]].offset_cache,isReadCache);
            
@@ -115,6 +115,7 @@ bool Sl::readItem(vector<ll> &keys)
         }
         else if (isWriteCached(keys[i]))
         {
+            cout<<"读命中写缓冲区"<<endl;
             isReadCache=2;
             accessWriteKey(keys[i], true);
             st.read_hit_nums += 1;
@@ -128,11 +129,12 @@ bool Sl::readItem(vector<ll> &keys)
     {
         if (keys[i] != -1)
         {
+            cout<<"读未命中"<<keys[i]<<endl;
             isTraceHit = false;
-           
+            // removeKey(keys[i], 1);
             accessKey(keys[i], false); // [lirs] cache_map.Add(keys[i],0);
+            cout<<"accessKey"<<endl;
             readDisk(keys[i]);
-            //д����
             writeCache(keys[i],1);
         }
     }
@@ -146,29 +148,7 @@ bool Sl::writeItem(vector<ll> &keys)
     // cache hit
     for (int i = 0; i < keys.size(); i++)
     {
-        if (isCached(keys[i]))
-        {
-            //���������У������ƶ���д����
-            //����Ӧ��key���µ�д������
-            // accessWriteKey(keys[i], true)
-            //�Ӷ�����LRU�������Ӧkey
-            // keys[i] = -1;
-
-
-            //
-            st.write_hit_nums += 1;
-            // accessKey(keys[i], false); // [lirs] cache_map.Add(keys[i],0);
-           
-            
-            accessWriteKey(keys[i], false);
-            remove(keys[i], 1);
-            // coverageCache(&chunk_map[keys[i]]);
-            // writeCache(keys[i], 2);
-            // chunk_map[keys[i]].offset_cache=-1;
-            keys[i] = -1;
-            
-        }
-        else if (isWriteCached(keys[i]))
+        if(isWriteCached(keys[i]))
         {
             st.write_hit_nums += 1;
             accessWriteKey(keys[i], false);
@@ -177,6 +157,20 @@ bool Sl::writeItem(vector<ll> &keys)
             coverageCache(&chunk_map_w[keys[i]]);
             // chunk_map[keys[i]].offset_cache=-1;
             keys[i] = -1;
+        }else if (isCached(keys[i]))
+        {
+            //
+            st.write_hit_nums += 1;
+            // accessKey(keys[i], false); // [lirs] cache_map.Add(keys[i],0);
+           
+            
+            // accessWriteKey(keys[i], false);
+            remove(keys[i], 1);
+            // coverageCache(&chunk_map[keys[i]]);
+            // writeCache(keys[i], 2);
+            // chunk_map[keys[i]].offset_cache=-1;
+            keys[i] = -1;
+            
         }
     }
     // cache miss
@@ -196,17 +190,6 @@ bool Sl::writeItem(vector<ll> &keys)
     return isTraceHit;
 }
 
-// void Sl::isWriteFull(const ll &key,int isReadCache)
-// {
-//     if(!free_cache_w.empty()){
-//         ll offset_cache=free_cache_w.back();
-//         chunk item = {key, offset_cache};
-//         chunk_map[key] = item;
-//         free_cache.pop_back();
-//     }
-// }
-
-//�������isReadCache��д�������?1��д��д����2
 void Sl::writeCache(const ll &key,int isReadCache)
 {
     // cout << "writeCache: ";
@@ -244,23 +227,6 @@ void Sl::writeCache(const ll &key,int isReadCache)
             writeChunk(1, offset_cache, CHUNK_SIZE);
         }
 
-        // cout << "cache full" << endl;
-        // ll victim = getVictim(); // [lirs] ll victim = cache_map.getCurVictim();
-        // assert(victim != -1);
-        // ll offset_cache = chunk_map[victim].offset_cache;
-        // chunk_map[victim].offset_cache = -1;
-        // if (chunk_map.count(key) == 0)
-        // {
-        //     chunk item = {key, offset_cache};
-        //     chunk_map[key] = item;
-        // }
-        // else
-        // {
-        //     chunk_map[key].offset_cache = offset_cache;
-        // }
-        // //����д���д�����޸Ĳ���true����Ϊint����
-        // writeChunk(true, offset_cache, CHUNK_SIZE);
-        // writeBack(&chunk_map[victim]);
     }else if (isReadCache==2) {
         if (!free_cache_w.empty())
         {
@@ -371,7 +337,7 @@ bool Sl::isWriteCache()
         return true;
 
     int min = 1, max = 100;
-    random_device seed;                           // Ӳ���������������?
+    random_device seed;                          
     ranlux48 engine(seed());                      // ���������������������?
     uniform_int_distribution<> distrib(min, max); // �����������Χ����Ϊ���ȷֲ�?
     int random = distrib(engine);                 // �����?
@@ -405,15 +371,10 @@ void Sl::init()
 
 void Sl::initFile()
 {
-    fd_cache_w = open(CACHE_PATH, O_RDWR | O_DIRECT, 0664);
+    fd_cache_w = open(CACHE_PATH_W, O_RDWR | O_DIRECT, 0664);
     assert(fd_cache_w>=0);
     fd_cache = open(CACHE_PATH, O_RDWR | O_DIRECT, 0664);
     assert(fd_cache >= 0);
-
-    //д����
-    // write_fd_cache = open(WRITE_CACHE_PATH, O_RDWR | O_DIRECT, 0664);
-    // assert(write_fd_cache >= 0);
-
     fd_disk = open(DISK_PATH, O_RDWR | O_DIRECT, 0664);
     assert(fd_disk >= 0);
 }
@@ -421,7 +382,6 @@ void Sl::initFile()
 void Sl::closeFile()
 {
     close(fd_cache);
-    // close(write_fd_cache)
     close(fd_disk);
     close(fd_cache_w);
 }
@@ -525,41 +485,6 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
     // cout<<filePath<<endl;
     assert(fd >= 0);
     char *buffer = nullptr;
-
-
-    // assert(offset != -1);
-    // int fd = -1;
-    // if (isCache)
-    //     fd = fd_cache_w;
-    // else
-    //     fd = fd_disk;
-    // // cout<<filePath<<endl;
-    // assert(fd >= 0);
-    // char *buffer = nullptr;
-
-    //����ȫ�ֱ�������¼֮ǰ�Ķ�������һ��I/O��ʱ�䡢��ǰI/Oʱ�䡢���ϴ�I/Oʱ�䡢�ִ�
-    //���SMR������д�룬����read������������δ���е���������Ȼ��break
-    // else
-    // {
-    //     // cout << "cache full" << endl;
-    //     ll victim = getVictim(); // [lirs] ll victim = cache_map.getCurVictim();
-    //     assert(victim != -1);
-    //     ll offset_cache = chunk_map[victim].offset_cache;
-    //     chunk_map[victim].offset_cache = -1;
-    //     if (chunk_map.count(key) == 0)
-    //     {
-    //         chunk item = {key, offset_cache};
-    //         chunk_map[key] = item;
-    //     }
-    //     else
-    //     {
-    //         chunk_map[key].offset_cache = offset_cache;
-    //     }
-    //     writeChunk(true, offset_cache, CHUNK_SIZE);
-    //     writeBack(&chunk_map[victim]);
-    // }
-
-    //д��
     int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
 
     assert(res == 0);
@@ -607,35 +532,19 @@ void Sl::initFreeCache()
     {
         free_cache.push_back(i * CHUNK_SIZE);
         free_cache_w.push_back(i * CHUNK_SIZE);
-        // free_cache_w.push_back(i * CHUNK_SIZE);
-        // cout<<i * CHUNK_SIZE<<" has pushed in to free cache"<<endl;
     }
-    // for (long long i = read_SIZE; i < CACHE_SIZE; i++)
-    // {
-    //     // free_cache.push_back(i * CHUNK_SIZE);
-    //     free_cache_w.push_back(i * CHUNK_SIZE);
-    //     // cout<<i * CHUNK_SIZE<<" has pushed in to free cache"<<endl;
-    // }
 }
 
 void Sl::readCache(const ll &offset_cache,int isReadCache)
 {
     // printf("readCache\n");
     assert(offset_cache != -1);
-    // readChunk(true, offset_cache, CHUNK_SIZE);
-    //����������ʱcached=1�� д��������ʱcached=2��readCache��һ������isReadCache��readItem������
-    // if (isReadCache==1) {
-    //     readChunk(1, offset_cache, CHUNK_SIZE);
-    // }
-    // else if(isReadCache==2){
-    //     readChunk(2, offset_cache, CHUNK_SIZE);
-    // }
     readChunk(isReadCache, offset_cache, CHUNK_SIZE);
 }
 
 void Sl::readDisk(const long long &key)
 {
-    // printf("readDisk\n");
+    printf("readDisk\n");
     assert(key != -1);
     readChunk(0, key, CHUNK_SIZE);
 }
@@ -676,17 +585,19 @@ void Sl::statistic()
 
 void Sl::remove(const ll &key,int isReadCache)
 {
-    removeKey(key, isReadCache);
+    auto status=removeKey(key, isReadCache);
+    assert(status);
     accessWriteKey(key, false);
     if (isReadCache == 1)
     {
         free_cache.push_back(chunk_map[key].offset_cache);
+        cout<<chunk_map[key].offset_cache<<endl;
     }
     else
     {
         free_cache_w.push_back(chunk_map_w[key].offset_cache);
     }
-    // chunk_map[key].offset_cache=-1;
+    chunk_map[key].offset_cache=-1;
     if (!free_cache_w.empty())
     {
         ll offset_cache = free_cache_w.back();
@@ -697,7 +608,7 @@ void Sl::remove(const ll &key,int isReadCache)
     }
     else
     {
-        ll victim = getVictim();
+        ll victim = getWriteVictim();
         assert(victim != -1);
         ll offset_cache = chunk_map_w[victim].offset_cache;
         chunk_map_w[victim].offset_cache = -1;

@@ -37,7 +37,9 @@ bool LruSl::isCached(const ll &key)
 
 void LruSl::accessKey(const ll &key, const bool &isGet)
 {
+    cout<<"执行put前:"<<cache_map.Size()<<endl;
     cache_map.Put(key, 0);
+    cout<<"执行put后:"<<cache_map.Size()<<endl;
 }
 
 ll LruSl::getVictim(){
