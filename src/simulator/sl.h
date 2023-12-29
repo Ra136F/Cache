@@ -243,7 +243,7 @@ void Sl::writeCache(const ll &key,int isReadCache)
         // writeChunk(true, offset_cache, CHUNK_SIZE);
         // writeBack(&chunk_map[victim]);
     }else if (isReadCache==2) {
-                if (!free_cache_w.empty())
+        if (!free_cache_w.empty())
         {
             // cout << "cache not full" << endl;
             ll offset_cache = free_cache_w.back();
@@ -587,6 +587,7 @@ void Sl::initFreeCache()
     for (long long i = 0; i < CACHE_SIZE; i++)
     {
         free_cache.push_back(i * CHUNK_SIZE);
+        free_cache_w.push_back(i * CHUNK_SIZE);
         // cout<<i * CHUNK_SIZE<<" has pushed in to free cache"<<endl;
     }
 }

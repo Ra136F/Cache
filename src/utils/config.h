@@ -10,7 +10,7 @@ const long long CHUNK_NUM = 47343;
 const char *TRACE_PATH = "../trace/zipfian/10w_82_4k/tracea_run.txt";
 const char *CACHE_PATH = "/data2/Cache/cache_0.1.bin";
 const char *CACHE_PATH_W = "/data2/Cache/cache_0.2.bin";
-const long long CACHE_SIZE = CHUNK_NUM * 0.1;
+const long long CACHE_SIZE = CHUNK_NUM * 0.05;
 const char *DISK_PATH = "/SMR/db/storage/disk.bin";
 
 typedef long long ll;
