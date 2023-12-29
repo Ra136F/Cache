@@ -85,6 +85,7 @@ protected:
     virtual bool isCached(const ll &key) = 0;
     virtual void accessKey(const ll &key, const bool &isGet) = 0;
     virtual void accessWriteKey(const ll &key, const bool &isGet) = 0 ;
+    virtual bool removeKey(const ll &key,int isReadCache)=0;
     virtual ll getVictim() = 0;
     virtual ll getWriteVictim()=0 ;
 };

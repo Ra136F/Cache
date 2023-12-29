@@ -19,6 +19,7 @@ private:
 
     bool isCached(const ll &key);
     bool isWriteCached(const ll &key);
+    bool removeKey(const ll &key,int isReadCache);
     void accessKey(const ll &key, const bool &isGet);
     void accessWriteKey(const ll &key, const bool &isGet);
     ll getVictim();
@@ -50,6 +51,15 @@ bool LruSl::isWriteCached(const ll &key)
     return write_cache_map.Cached(key);
 }
 
+bool LruSl::removeKey(const ll &key,int isReadCache)
+{
+    if(isReadCache==1){
+        return cache_map.Remove(key);
+    } else{
+        return write_cache_map.Remove(key);
+    }
+}
+
 void LruSl::accessWriteKey(const ll &key, const bool &isGet)
 {
     write_cache_map.Put(key, 0);
@@ -58,6 +68,8 @@ void LruSl::accessWriteKey(const ll &key, const bool &isGet)
 ll LruSl::getWriteVictim(){
     return write_cache_map.getVictim();
 }
+
+
 
 
 #endif /*_LRU_SIMULATOR_HPP_INCLUDED_*/
