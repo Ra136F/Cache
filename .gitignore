@@ -4,3 +4,4 @@ result/mem_used.log
 result/statistic.txt
 result/**
 trace/**
+test/**
