@@ -14,7 +14,8 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
-
+#include <iostream>
+using namespace std;
 namespace caches
 {
 
@@ -79,13 +80,14 @@ class fixed_sized_cache
             if (cache_items_map.size() + 1 > max_cache_size)
             {
                 disp_candidate_key = cache_policy.ReplCandidate();
-
+                cout<<"替代者:"<<disp_candidate_key<<endl;
                 Erase(disp_candidate_key);
+                // cout<<"afterEraset:"<<disp_candidate_key<<endl;
             }
 
             
             Insert(key, value);
-
+            
         }
         else
         {
@@ -207,6 +209,7 @@ class fixed_sized_cache
 
     void Erase(const_iterator elem)
     {
+        // cout<<"beforeErase2:"<<elem<<endl;
         cache_policy.Erase(elem->first);
         OnEraseCallback(elem->first, elem->second);
         cache_items_map.erase(elem);
@@ -214,8 +217,9 @@ class fixed_sized_cache
 
     void Erase(const Key &key)
     {
+        
         auto elem_it = FindElem(key);
-
+        // cout<<"beforeErase2:"<<elem_it->first<<endl;
         Erase(elem_it);
     }
 
