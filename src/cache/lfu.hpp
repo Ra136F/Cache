@@ -59,6 +59,11 @@ class LFU : public ICachePolicy<Key>
         frequency_storage.erase(lfu_storage[key]);
         lfu_storage.erase(key);
     }
+    
+        void EraseKey(const Key &key) noexcept override
+    {
+        // remove the least recently used element
+    }
 
     const Key &ReplCandidate() const noexcept override
     {

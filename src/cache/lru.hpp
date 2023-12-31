@@ -57,6 +57,13 @@ class LRU : public ICachePolicy<Key>
         lru_queue.pop_back();
     }
 
+    void EraseKey(const Key &key) noexcept override
+    {
+        // remove the key
+        key_finder.erase(key);
+        lru_queue.remove(key);
+    }
+
     // return a key of a displacement candidate
     const Key &ReplCandidate() const noexcept override
     {

@@ -58,6 +58,11 @@ class FIFO : public ICachePolicy<Key>
         key_lookup.erase(key);
     }
 
+    void EraseKey(const Key &key) noexcept override
+    {
+
+    }
+
     // return a key of a replacement candidate
     const Key &ReplCandidate() const noexcept override
     {
