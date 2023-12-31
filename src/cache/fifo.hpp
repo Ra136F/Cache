@@ -63,6 +63,10 @@ class FIFO : public ICachePolicy<Key>
     {
         return fifo_queue.back();
     }
+        void EraseKey(const Key &key) noexcept override
+    {
+        
+    }
 
   private:
     std::list<Key> fifo_queue;

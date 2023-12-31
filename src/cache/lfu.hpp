@@ -66,6 +66,10 @@ class LFU : public ICachePolicy<Key>
         // least frequency used value
         return frequency_storage.cbegin()->second;
     }
+        void EraseKey(const Key &key) noexcept override
+    {
+        
+    }
 
   private:
     std::multimap<std::size_t, Key> frequency_storage;

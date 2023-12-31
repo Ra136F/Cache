@@ -42,6 +42,8 @@ class ICachePolicy
      * \return Replacement candidate according to selected policy
      */
     virtual const Key &ReplCandidate() const = 0;
+
+    virtual void EraseKey(const Key &key) = 0;
 };
 
 /**
@@ -70,6 +72,11 @@ class NoCachePolicy : public ICachePolicy<Key>
     }
 
     void Erase(const Key &key) noexcept override
+    {
+        key_storage.erase(key);
+    }
+
+    void EraseKey(const Key &key) noexcept override
     {
         key_storage.erase(key);
     }

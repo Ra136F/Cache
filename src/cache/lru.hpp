@@ -53,6 +53,7 @@ class LRU : public ICachePolicy<Key>
     void Erase(const Key &) noexcept override
     {
         // remove the least recently used element
+        
         key_finder.erase(lru_queue.back());
         lru_queue.pop_back();
     }
@@ -62,6 +63,15 @@ class LRU : public ICachePolicy<Key>
     {
         return lru_queue.back();
     }
+
+    void EraseKey(const Key &key) noexcept override
+    {
+        // remove the least recently used element
+        
+        key_finder.erase(key);
+        lru_queue.remove(key);
+    }
+
 
   private:
     std::list<Key> lru_queue;

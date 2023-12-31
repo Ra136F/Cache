@@ -172,7 +172,7 @@ class fixed_sized_cache
             return false;
         }
 
-        Erase(elem);
+        EraseKey(elem);
 
         return true;
     }
@@ -202,6 +202,13 @@ class fixed_sized_cache
     {
         cache_policy.Insert(key);
         cache_items_map.emplace(std::make_pair(key, value));
+    }
+
+    void EraseKey(const_iterator elem)
+    {
+        cache_policy.erased_key(elem->first);
+        OnEraseCallback(elem->first, elem->second);
+        cache_items_map.erase(elem);
     }
 
     void Erase(const_iterator elem)
