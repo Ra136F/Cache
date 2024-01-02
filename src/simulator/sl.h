@@ -37,19 +37,19 @@ using namespace std;
 int turn = 0;  // q-learning训练轮次
 int currentAction = 0;
 int lastAction = 0; //上一次执行的动作，1为写入smr，0为其他
-int currentTime = 0; //当前动作时间
-int lastTime = 0; //上一次动作时间
-int llTime = 0; //上上次动作时间
+long long currentTime = 0; //当前动作时间
+long long lastTime = 0; //上一次动作时间
+long long llTime = 0; //上上次动作时间
 double qTable[4][4][2][2] = {0};
 double rate = 0.1;
 //探索因子 
-double greedy = 0.9;
+double greedy = 0.8;
 //奖励函数时间阈值
  ////t1=90,t2=40000,t3=70000,t4=200000,t5=3000000
  //80 15000 25000 35000 100000
-double t1 = 100;
+double t1 = 1500;
 
-double t2 = 3000;
+double t2 = 5000;
 
 struct CurrentState {
 	//当前I/O间隔 
@@ -58,11 +58,28 @@ struct CurrentState {
   	int last_IO;
   	//上一次执行的动作 
   	int last_Action;
-    int isHot=0;
 };
 
 
-double get_expected_max_score(CurrentState currentState){
+int calculate_timeInterval(long long currentTime, long long lastTime) {
+    long long interval = currentTime - lastTime;
+    if (interval <= 5) {
+        return 0;
+    }
+    else if (interval > 5 && interval <= 10) {
+        return 1;
+    }
+    else if (interval > 10 && interval <= 18)
+    {
+        return 2;
+    }
+    else {
+        return 3;
+    }
+    
+}
+
+double get_expected_max_score(CurrentState currentState) {
  	double s = -10000;
  	for (int i=0;i<2;i++){
  		s = std::max(s,qTable[currentState.current_IO][currentState.last_IO][currentState.last_Action][i]);
@@ -97,19 +114,15 @@ int chooseAction(CurrentState currentState){
     std::srand(static_cast<unsigned>(std::time(nullptr)));
     double randomNuber = static_cast<double>(std::rand()) / RAND_MAX;
 
-    if (turn > 1000 && turn <= 2500) {
-      greedy = 0.8;
-    } else if (turn > 2500 && turn <= 3500) {
+    if (turn > 250 && turn <= 500) {
       greedy = 0.6;
-    } else if (turn > 3500 && turn <= 5000) {
-      greedy = 0.5;
-    } else if (turn > 5000 && turn <= 8000) {
-      greedy = 0.3;
-    } else if (turn > 8000 && turn <= 15000) {
+    } else if (turn > 500 && turn <= 1000) {
+      greedy = 0.4;
+    } else if (turn > 1000 && turn <= 2000) {
       greedy = 0.2;
-    } else if (turn > 15000 && turn <= 30000) {
+    } else if (turn > 2000 && turn <= 5000) {
       greedy = 0.1;
-    } else if (turn > 30000) {
+    } else {
       greedy = 0.05;
     }
 
@@ -605,7 +618,20 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
             assert(res == size);
             free(buffer);
         }
+
+
+        
+        struct timeval current_t;
+        gettimeofday(&current_t, NULL);
+        currentTime = current_t.tv_sec * 1000000 + current_t.tv_usec;
+        // record time interval
+        currentState.current_IO = calculate_timeInterval(currentTime, lastTime);
+        currentState.last_IO = calculate_timeInterval(lastTime, llTime);
+        currentState.last_Action = lastAction;
+
+
         struct timeval t2;
+        gettimeofday(&t2, NULL);
         long long deltaT = (t2.tv_sec - t.tv_sec) * 1000000 + (t2.tv_usec - t.tv_usec);
         //奖励
         double award = returnAward(currentState, deltaT);
