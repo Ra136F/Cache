@@ -599,7 +599,14 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
     else
     {
         fd = fd_disk;
-        int action = chooseAction(currentState);
+        int action=0;
+        if(turn!=0)
+        {
+            action = chooseAction(currentState);
+        }
+        else {
+        action=1;
+        }
         //
         if (action == 0)
         {
@@ -625,6 +632,7 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
         gettimeofday(&current_t, NULL);
         currentTime = current_t.tv_sec * 1000000 + current_t.tv_usec;
         // record time interval
+        cout<<"c-l:"<<currentTime-lastTime<<endl;
         currentState.current_IO = calculate_timeInterval(currentTime, lastTime);
         currentState.last_IO = calculate_timeInterval(lastTime, llTime);
         currentState.last_Action = lastAction;
