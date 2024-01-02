@@ -599,14 +599,15 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
     else
     {
         fd = fd_disk;
-        int action=0;
-        if(turn!=0)
-        {
-            action = chooseAction(currentState);
-        }
-        else {
-        action=1;
-        }
+        // int action=0;
+        // if(turn!=0)
+        // {
+        //     action = chooseAction(currentState);
+        // }
+        // else {
+        // action=1;
+        // }
+        int action=chooseAction(currentState);
         //
         if (action == 0)
         {
