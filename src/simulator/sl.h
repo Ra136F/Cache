@@ -30,7 +30,106 @@
 #include "../utils/config.h"
 #include "../utils/statistic.h"
 
+#include "./global_variables.h"
+
 using namespace std;
+
+int turn = 0;  // q-learning训练轮次
+int currentAction = 0;
+int lastAction = 0; //上一次执行的动作，1为写入smr，0为其他
+int currentTime = 0; //当前动作时间
+int lastTime = 0; //上一次动作时间
+int llTime = 0; //上上次动作时间
+double qTable[4][4][2][2] = {0};
+double rate = 0.1;
+//探索因子 
+double greedy = 0.9;
+//奖励函数时间阈值
+ ////t1=90,t2=40000,t3=70000,t4=200000,t5=3000000
+ //80 15000 25000 35000 100000
+double t1 = 100;
+
+double t2 = 3000;
+
+struct CurrentState {
+	//当前I/O间隔 
+  	int current_IO;
+  	//上一个I/O间隔 
+  	int last_IO;
+  	//上一次执行的动作 
+  	int last_Action;
+    int isHot=0;
+};
+
+
+double get_expected_max_score(CurrentState currentState){
+ 	double s = -10000;
+ 	for (int i=0;i<2;i++){
+ 		s = std::max(s,qTable[currentState.current_IO][currentState.last_IO][currentState.last_Action][i]);
+	 }
+	 return s;
+ }
+ 
+
+//返回当前状态下执行动作的相应奖励 
+double returnAward(CurrentState currentState, long long  response_time){
+		
+	//得到执行动作后的预期奖励，见函数说明 
+	double excepted_max_score = get_expected_max_score(currentState);
+	//对应马尔可夫决策过程 
+	//Qtable[x][y][i] = Qtable[x][y][i] + rate * ( reward[x1][y1] + max( Qtable[x1][y1][i] ))
+	//中的 reward[x1][y1] + max( Qtable[x1][y1][i] )
+        // t1=80,t2=500,t3=1000,t4=2000,t5=3000
+        if (response_time <= t1) {
+          return 1.0 + 1.0 * rate * excepted_max_score;
+        }  else if (response_time > t1 && response_time <= t2) {
+          return 0 + 1.0 * rate * excepted_max_score;
+        }  else {
+          return -1 + 1.0 * rate * excepted_max_score;
+        }
+} 
+
+ 
+
+//选择动作
+int chooseAction(CurrentState currentState){
+    //生成随机数
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+    double randomNuber = static_cast<double>(std::rand()) / RAND_MAX;
+
+    if (turn > 1000 && turn <= 2500) {
+      greedy = 0.8;
+    } else if (turn > 2500 && turn <= 3500) {
+      greedy = 0.6;
+    } else if (turn > 3500 && turn <= 5000) {
+      greedy = 0.5;
+    } else if (turn > 5000 && turn <= 8000) {
+      greedy = 0.3;
+    } else if (turn > 8000 && turn <= 15000) {
+      greedy = 0.2;
+    } else if (turn > 15000 && turn <= 30000) {
+      greedy = 0.1;
+    } else if (turn > 30000) {
+      greedy = 0.05;
+    }
+
+    if (randomNuber >= greedy) {
+        currentAction = std::rand() % 2;
+    }
+    else {
+        if (qTable[currentState.current_IO][currentState.last_IO][currentState.last_Action][0] > qTable[currentState.current_IO][currentState.last_IO][currentState.last_Action][1]) {
+            return 0;
+        }
+        else {
+            return 1;
+        }
+    }
+    return currentAction;
+}
+
+
+
+
 
 class Sl
 {
@@ -55,25 +154,26 @@ protected:
     void initFile();
     void closeFile();
 
-    bool readItem(vector<ll> &keys);
-    bool writeItem(vector<ll> &keys);
-    virtual void writeCache(const ll &key,int isReadCache);
+    bool readItem(vector<ll> &keys,struct timeval t);
+    bool writeItem(vector<ll> &keys,struct timeval t);
+    virtual void writeCache(const ll &key,int isReadCache,struct timeval t);
 
-    void writeBack(chunk *arg);
+    void writeBack(chunk *arg,struct timeval t);
 
     void readDisk(const long long &key); // disk->cache disk->buffer
-    void writeDisk(const long long &key);
+    void writeDisk(const long long &key,struct timeval t);
 
     void readCache(const ll &offset_cache,int isReadCache); // cache->buffer
-    void coverageCache(chunk *arg);
+    void coverageCache(chunk *arg,struct timeval t);
+    void isDirty(chunk *arg);
 
     void normRead(bool isCache, const long long &offset, const long long &size);
     void normWrite(bool isCache, const long long &offset, const long long &size);
     void odirectRead(int isCache, const long long &offset, const long long &size);
-    void odirectWrite(int isCache, const long long &offset, const long long &size);
+    void odirectWrite(int isCache, const long long &offset, const long long &size, const ll &key,struct timeval t);
 
     void readChunk(int isCache, const long long &offset, const long long &size);
-    void writeChunk(int isCache, const long long &offset, const long long &size);
+    void writeChunk(int isCache, const long long &offset, const long long &size, const ll &key,struct timeval t);
 
     void printChunk(chunk *arg);
     void printChunkMap();
@@ -82,7 +182,7 @@ protected:
     bool isWriteCache(); 
     virtual  bool isWriteCached(const ll &key) =0 ;
     void checkFile(fstream &file);
-    void remove(const ll &key,int isReadCache);
+    void remove(const ll &key,int isReadCache,struct timeval t);
     virtual bool isCached(const ll &key) = 0;
     virtual void accessKey(const ll &key, const bool &isGet) = 0;
     virtual void accessWriteKey(const ll &key, const bool &isGet) = 0 ;
@@ -91,7 +191,7 @@ protected:
     virtual ll getWriteVictim()=0 ;
 };
 
-bool Sl::readItem(vector<ll> &keys)
+bool Sl::readItem(vector<ll> &keys,struct timeval t)
 {
     // 
     int isReadCache=0;
@@ -115,7 +215,7 @@ bool Sl::readItem(vector<ll> &keys)
         }
         else if (isWriteCached(keys[i]))
         {
-            cout<<"读命中写缓冲区"<<endl;
+            // cout<<"读命中写缓冲区"<<endl;
             isReadCache=2;
             accessWriteKey(keys[i], true);
             st.read_hit_nums += 1;
@@ -129,19 +229,19 @@ bool Sl::readItem(vector<ll> &keys)
     {
         if (keys[i] != -1)
         {
-            cout<<"读未命中"<<keys[i]<<endl;
+            // cout<<"读未命中"<<keys[i]<<endl;
             isTraceHit = false;
             // removeKey(keys[i], 1);
             accessKey(keys[i], false); // [lirs] cache_map.Add(keys[i],0);
             // cout<<"accessKey"<<endl;
             readDisk(keys[i]);
-            writeCache(keys[i],1);
+            writeCache(keys[i],1,t);
         }
     }
     return isTraceHit;
 }
 
-bool Sl::writeItem(vector<ll> &keys)
+bool Sl::writeItem(vector<ll> &keys,struct timeval t)
 {
     bool isTraceHit = true;
     st.write_nums += keys.size();
@@ -154,7 +254,7 @@ bool Sl::writeItem(vector<ll> &keys)
             accessWriteKey(keys[i], false);
             // �޸�readCache��readChunk
             //  readCache(chunk_map[keys[i]].offset_cache);
-            coverageCache(&chunk_map_w[keys[i]]);
+            coverageCache(&chunk_map_w[keys[i]],t);
             // chunk_map[keys[i]].offset_cache=-1;
             keys[i] = -1;
         }
@@ -162,7 +262,7 @@ bool Sl::writeItem(vector<ll> &keys)
         {
             //
             st.write_hit_nums += 1;
-            remove(keys[i], 1);
+            remove(keys[i], 1,t);
             keys[i] = -1;
         }
     }
@@ -175,14 +275,14 @@ bool Sl::writeItem(vector<ll> &keys)
             accessWriteKey(keys[i], false); 
             // accessKey(keys[i], false); // [lirs] cache_map.Add(keys[i],0);
 
-            writeCache(keys[i],2);
+            writeCache(keys[i],2,t);
         }
     }
     return isTraceHit;
 }
 
 
-void Sl::writeCache(const ll &key,int isReadCache)
+void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
 {
     // cout << "writeCache: ";
     if (!isWriteCache())
@@ -196,7 +296,7 @@ void Sl::writeCache(const ll &key,int isReadCache)
             chunk item = {key, offset_cache};
             chunk_map[key] = item;
             free_cache.pop_back();
-            writeChunk(1, offset_cache, CHUNK_SIZE);
+            writeChunk(1, offset_cache, CHUNK_SIZE, key,t);
         }
         // cache full
         else
@@ -214,7 +314,7 @@ void Sl::writeCache(const ll &key,int isReadCache)
             {
                 chunk_map[key].offset_cache = offset_cache;
             }
-            writeChunk(1, offset_cache, CHUNK_SIZE);
+            writeChunk(1, offset_cache, CHUNK_SIZE, key,t);
         }
 
     }else if (isReadCache==2) {
@@ -225,7 +325,7 @@ void Sl::writeCache(const ll &key,int isReadCache)
             chunk item = {key, offset_cache};
             chunk_map_w[key] = item;
             free_cache_w.pop_back();
-            writeChunk(2, offset_cache, CHUNK_SIZE);
+            writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
         }
         // cache full
         else
@@ -243,8 +343,8 @@ void Sl::writeCache(const ll &key,int isReadCache)
             {
                 chunk_map_w[key].offset_cache = offset_cache;
             }
-            writeChunk(2, offset_cache, CHUNK_SIZE);
-            writeBack(&chunk_map_w[victim]);
+            writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
+            writeBack(&chunk_map_w[victim],t);
         }
     }
 }
@@ -291,10 +391,10 @@ void Sl::test()
         switch (type)
         {
         case 0:
-            isTraceHit = readItem(keys);
+            isTraceHit = readItem(keys,t1);
             break;
         case 1:
-            isTraceHit = writeItem(keys);
+            isTraceHit = writeItem(keys,t1);
             break;
         }
 
@@ -388,12 +488,12 @@ void Sl::printFreeCache()
 }
 
 // д�أ��ж����ݿ��Ƿ�Ϊ��
-void Sl::writeBack(chunk *arg)
+void Sl::writeBack(chunk *arg,struct timeval t)
 {
     if (arg->dirty == 1)
     {
         arg->dirty = 0;
-        writeDisk(arg->key);
+        writeDisk(arg->key,t);
     }
     // ��飺Q-Learning����SMR�����ж��Ƿ�д��
     // SMRæ����һ��ֵ��ѡ��ɾ���?
@@ -451,32 +551,79 @@ void Sl::odirectRead(int isCache, const long long &offset, const long long &size
     free(buffer);
 }
 
-//isCache�޸�Ϊint���ͣ�1��ʾ�����棬2��ʾд��������
-void Sl::odirectWrite(int isCache, const long long &offset, const long long &size)
+void Sl::odirectWrite(int isCache, const long long &offset, const long long &size, const ll &key,struct timeval t)
 {
+    CurrentState currentState;
     assert(offset != -1);
     int fd = -1;
-    if (isCache==1)
+    if (isCache == 1)
+    {
         fd = fd_cache;
-    else if(isCache==2)
+
+        assert(fd >= 0);
+        char *buffer = nullptr;
+        int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
+        assert(res == 0);
+        strcpy(buffer, "Ram15978");
+        res = pwrite64(fd, buffer, size, offset);
+        assert(res == size);
+        free(buffer);
+    }
+
+    else if (isCache == 2)
+    {
         fd = fd_cache_w;
+
+        assert(fd >= 0);
+        char *buffer = nullptr;
+        int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
+        assert(res == 0);
+        strcpy(buffer, "Ram15978");
+        res = pwrite64(fd, buffer, size, offset);
+        assert(res == size);
+        free(buffer);
+    }
     else
+    {
         fd = fd_disk;
-    // cout<<filePath<<endl;
-    assert(fd >= 0);
-    char *buffer = nullptr;
-    int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
+        int action = chooseAction(currentState);
+        //
+        if (action == 0)
+        {
+            // key
+            isDirty(&chunk_map[key]);
+            writeCache(key, 1,t);
+            
+        }
+        // write to smr
+        else
+        {
+            char *buffer = nullptr;
+            fd = fd_disk;
+            strcpy(buffer, "Ram15978");
+            int res = pwrite64(fd, buffer, size, offset);
+            assert(res == size);
+            free(buffer);
+        }
+        struct timeval t2;
+        long long deltaT = (t2.tv_sec - t.tv_sec) * 1000000 + (t2.tv_usec - t.tv_usec);
+        //奖励
+        double award = returnAward(currentState, deltaT);
+        //更新Q表
+        qTable[currentState.current_IO][currentState.last_IO][currentState.last_Action][action] += award*0.1;
+        //记录当前动作作为下一状态的前一次执行动作
+        lastAction = action;
+        turn++;
+        llTime = lastTime;
+        lastTime = currentTime;
+    }
 
-    assert(res == 0);
+     
 
-    strcpy(buffer, "Ram15978");
-    res = pwrite64(fd, buffer, size, offset);
-    // cout<<"odirectWrite: res: "<<res<<", fd: "<<fd<<", buffer: "<<buffer<<", size: "<<size<<", offset: "<<offset<<endl;
-    // printf("odirectWrite: %d\n",res);
-    assert(res == size);
 
-    free(buffer);
-    // close(fd);
+
+
+
 }
 
 //isCache�޸�Ϊint���ͣ�1��ʾ�����棬2��ʾд��������
@@ -490,11 +637,11 @@ void Sl::readChunk(int isCache, const long long &offset, const long long &size)
 }
 
 //�޸�isCache//
-void Sl::writeChunk(int isCache, const long long &offset, const long long &size)
+void Sl::writeChunk(int isCache, const long long &offset, const long long &size, const ll &key,struct timeval t)
 {
     assert(offset != -1);
     if (O_DIRECT_ON)
-        odirectWrite(isCache, offset, size);
+        odirectWrite(isCache, offset, size, key,t);
     else
         normWrite(isCache, offset, size);
 }
@@ -537,17 +684,21 @@ void Sl::printChunkMap()
         cout << it->second;
 }
 
-void Sl::coverageCache(chunk *arg)
+void Sl::coverageCache(chunk *arg,struct timeval t)
 {
     // cout << "coverageCache" << endl;
     arg->dirty = 1;
-    writeChunk(2, arg->offset_cache, CHUNK_SIZE);
+    writeChunk(2, arg->offset_cache, CHUNK_SIZE,arg->key,t);
 }
 
-void Sl::writeDisk(const long long &key)
+void Sl::isDirty(chunk *arg){
+    arg->dirty = 1;
+}
+
+void Sl::writeDisk(const long long &key,struct timeval t)
 {
     // cout << "writeDisk" << endl;
-    writeChunk(0, key, CHUNK_SIZE);
+    writeChunk(0, key, CHUNK_SIZE,key,t);
 }
 
 void Sl::statistic()
@@ -557,7 +708,7 @@ void Sl::statistic()
 }
 
 
-void Sl::remove(const ll &key,int isReadCache)
+void Sl::remove(const ll &key,int isReadCache,struct timeval t)
 {
     auto status=removeKey(key, 1);
     assert(status);
@@ -567,7 +718,7 @@ void Sl::remove(const ll &key,int isReadCache)
     {
         // free_cache.insert(chunk_map[key].offset_cache,chunk_map[key].offset_cache/CHUNK_SIZE);
         free_cache.push_back(chunk_map[key].offset_cache);
-        cout<<key<<"==============================================================================================="<<endl;
+        // cout<<key<<"==============================================================================================="<<endl;
     }
     else
     {
@@ -580,7 +731,7 @@ void Sl::remove(const ll &key,int isReadCache)
         chunk item = {key, offset_cache};
         chunk_map_w[key] = item;
         free_cache_w.pop_back();
-        writeChunk(2, offset_cache, CHUNK_SIZE);
+        writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
     }
     else
     {
@@ -598,8 +749,8 @@ void Sl::remove(const ll &key,int isReadCache)
             chunk_map_w[key].offset_cache = offset_cache;
         }
         // chunk_map[key].dirty=1;
-        writeChunk(2, offset_cache, CHUNK_SIZE);
-        writeBack(&chunk_map_w[victim]);
+        writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
+        writeBack(&chunk_map_w[victim],t);
     }
 }
 
