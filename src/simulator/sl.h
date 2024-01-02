@@ -220,7 +220,7 @@ bool Sl::readItem(vector<ll> &keys,struct timeval t)
             // ͳ��������
             isReadCache=1;
             st.read_hit_nums += 1;
-            cout<<"读命中读缓冲区"<<endl;
+            // cout<<"读命中读缓冲区"<<endl;
             accessKey(keys[i], true); // [lirs] cache_map.Get(keys[i]);
             readCache(chunk_map[keys[i]].offset_cache,isReadCache);
            
@@ -328,6 +328,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                 chunk_map[key].offset_cache = offset_cache;
             }
             writeChunk(1, offset_cache, CHUNK_SIZE, key,t);
+            writeBack(&chunk_map[victim],t);
         }
 
     }else if (isReadCache==2) {
@@ -338,6 +339,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
             chunk item = {key, offset_cache};
             chunk_map_w[key] = item;
             free_cache_w.pop_back();
+            isDirty(&chunk_map_w[key]);
             writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
         }
         // cache full
@@ -356,6 +358,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
             {
                 chunk_map_w[key].offset_cache = offset_cache;
             }
+            isDirty(&chunk_map_w[key]);
             writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
             writeBack(&chunk_map_w[victim],t);
         }
@@ -404,9 +407,11 @@ void Sl::test()
         switch (type)
         {
         case 0:
+            cout<<"read"<<endl;
             isTraceHit = readItem(keys,t1);
             break;
         case 1:
+            cout<<"write"<<endl;
             isTraceHit = writeItem(keys,t1);
             break;
         }
@@ -599,20 +604,29 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
     else
     {
         fd = fd_disk;
-        // int action=0;
-        // if(turn!=0)
-        // {
-        //     action = chooseAction(currentState);
-        // }
-        // else {
-        // action=1;
-        // }
-        int action=chooseAction(currentState);
+        int action=0;
+        struct timeval current_t;
+        gettimeofday(&current_t, NULL);
+        currentTime = current_t.tv_sec * 1000000 + current_t.tv_usec;
+        // record time interval
+        
+        currentState.current_IO = calculate_timeInterval(currentTime, lastTime);
+        currentState.last_IO = calculate_timeInterval(lastTime, llTime);
+        currentState.last_Action = lastAction;
+        if(turn!=0)
+        {
+            action = chooseAction(currentState);
+        }
+        else {
+        action=1;
+        }
+       cout<<"c-l:"<<currentTime-lastTime<<":action:"<<action<<endl;
         //
         if (action == 0)
         {
             // key
             isDirty(&chunk_map[key]);
+            accessKey(key, false);
             writeCache(key, 1,t);
             
         }
@@ -621,24 +635,13 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
         {
             char *buffer = nullptr;
             fd = fd_disk;
+            int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
+            assert(res == 0);
             strcpy(buffer, "Ram15978");
-            int res = pwrite64(fd, buffer, size, offset);
+            res = pwrite64(fd, buffer, size, offset);
             assert(res == size);
             free(buffer);
         }
-
-
-        
-        struct timeval current_t;
-        gettimeofday(&current_t, NULL);
-        currentTime = current_t.tv_sec * 1000000 + current_t.tv_usec;
-        // record time interval
-        cout<<"c-l:"<<currentTime-lastTime<<endl;
-        currentState.current_IO = calculate_timeInterval(currentTime, lastTime);
-        currentState.last_IO = calculate_timeInterval(lastTime, llTime);
-        currentState.last_Action = lastAction;
-
-
         struct timeval t2;
         gettimeofday(&t2, NULL);
         long long deltaT = (t2.tv_sec - t.tv_sec) * 1000000 + (t2.tv_usec - t.tv_usec);
@@ -706,7 +709,7 @@ void Sl::readCache(const ll &offset_cache,int isReadCache)
 
 void Sl::readDisk(const long long &key)
 {
-    printf("readDisk\n");
+    // printf("readDisk\n");
     assert(key != -1);
     readChunk(0, key, CHUNK_SIZE);
 }

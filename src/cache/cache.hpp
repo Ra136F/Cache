@@ -80,7 +80,7 @@ class fixed_sized_cache
             if (cache_items_map.size() + 1 > max_cache_size)
             {
                 disp_candidate_key = cache_policy.ReplCandidate();
-                cout<<"替代者:"<<disp_candidate_key<<endl;
+                
                 Erase(disp_candidate_key);
                 // cout<<"afterEraset:"<<disp_candidate_key<<endl;
             }
