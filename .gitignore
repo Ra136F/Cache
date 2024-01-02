@@ -5,6 +5,3 @@ result/statistic.txt
 result/**
 trace/**
 test/**
-sl.h
-global_variables.cpp
-global_variables.h
