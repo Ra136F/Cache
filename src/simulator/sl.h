@@ -355,30 +355,62 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
         // cache full
         else
         {
-            ll victim=getWriteVictim();
+            int action = qLearn(t);
+            ll victim = getWriteVictim();
             assert(victim != -1);
             ll offset_cache = chunk_map_w[victim].offset_cache;
-            chunk_map_w[victim].offset_cache = -1;
-            if (chunk_map_w.count(key) == 0)
+            if (action == 1)
             {
-                chunk item = {key, offset_cache};
-                chunk_map_w[key] = item;
+                chunk_map_w[victim].offset_cache = -1;
+                if (chunk_map_w.count(key) == 0)
+                {
+                    chunk item = {key, offset_cache};
+                    chunk_map_w[key] = item;
+                }
+                else
+                {
+                    chunk_map_w[key].offset_cache = offset_cache;
+                }
+                isDirty(&chunk_map_w[key]);
+                writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
+                writeBack(&chunk_map_w[victim], t);
             }
             else
             {
-                chunk_map_w[key].offset_cache = offset_cache;
-            }
-            isDirty(&chunk_map_w[key]);
-            writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
-            int action=qLearn(t);
-            if(action==1)
-            {
-                writeBack(&chunk_map_w[victim],t);
-            }else {
-                //todo
-                chunk_map_w[victim].dirty=0;
-                accessKey(victim, false);
-                write_to_readCache(victim, 1, t);
+                // todo
+                if(!free_cache.empty())
+                {
+                    offset_cache=free_cache.back();
+                    free_cache.pop_back();
+                    free_cache.push_back(chunk_map_w[victim].offset_cache);
+                    if (chunk_map_w.count(key) == 0)
+                    {
+                        chunk item = {key, offset_cache};
+                        chunk_map_w[key] = item;
+                    }
+                    else
+                    {
+                        chunk_map_w[key].offset_cache = offset_cache;
+                    }
+                }else 
+                {
+                    ll victim2=getVictim2();
+                    assert(victim2 != 1);
+                    offset_cache = chunk_map[victim2].offset_cache;
+                    chunk_map[victim2].offset_cache = chunk_map_w[victim].offset_cache;
+                    if (chunk_map_w.count(key) == 0)
+                    {
+                        chunk item = {key, offset_cache};
+                        chunk_map_w[key] = item;
+                    }
+                    else
+                    {
+                        chunk_map_w[key].offset_cache = offset_cache;
+                    }
+                }
+                chunk_map_w[victim].offset_cache = -1;
+                isDirty(&chunk_map_w[key]);
+                writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
             }
            updateQtable(t, action);
         }
@@ -655,6 +687,9 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
 
 void Sl::write_to_readCache(const ll &key, int isReadCache, struct timeval t)
 {
+    accessWriteKey(key, false);
+    ll victim=getWriteVictim();
+    chunk_map_w[victim].offset_cache=-1;
     // cout << "writeCache: ";
     if (!isWriteCache())
         return;

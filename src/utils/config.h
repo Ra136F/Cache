@@ -4,16 +4,16 @@
 
 const PolicyType POLICY = policyTypes[3]; // 0~8
 
-const long long DISK_SIZE = 28306; // disk_capacity=DISK_SIZE*CHUNK_SIZE
-const long long CHUNK_NUM = 28306;
+const long long DISK_SIZE = 81928; // disk_capacity=DISK_SIZE*CHUNK_SIZE
+const long long CHUNK_NUM = 81928;
 
-const char *TRACE_PATH = "../trace/zipfian/10w_82_4k/tracea_run28.txt";
+const char *TRACE_PATH = "../trace/zipfian/10w_82_4k/tracea_run82.txt";
 const char *CACHE_PATH = "/data2/Cache/cache_0.1.bin";
 const char *CACHE_PATH_W = "/data2/Cache/cache_0.2.bin";
 const long long CACHE_SIZE = CHUNK_NUM * 0.1;
 
 const long long HALF_SIZE = CHUNK_NUM * 0.05;
-const char *DISK_PATH = "/SMR/db/storage/disk28.bin";
+const char *DISK_PATH = "/SMR/db/storage/disk82.bin";
 
 typedef long long ll;
 const long long CHUNK_SIZE = 4 * 1024; // 4kB
