@@ -359,6 +359,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
             ll victim = getWriteVictim();
             assert(victim != -1);
             ll offset_cache = chunk_map_w[victim].offset_cache;
+            action=1;
             if (action == 1)
             {
                 chunk_map_w[victim].offset_cache = -1;
