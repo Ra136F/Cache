@@ -47,9 +47,9 @@ double greedy = 0.8;
 //奖励函数时间阈值
  ////t1=90,t2=40000,t3=70000,t4=200000,t5=3000000
  //80 15000 25000 35000 100000
-double t1 = 2000;
+double t1 = 1500;
 
-double t2 = 6000;
+double t2 = 5000;
 
 struct CurrentState {
 	//当前I/O间隔 
