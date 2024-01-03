@@ -333,7 +333,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                 chunk_map[key].offset_cache = offset_cache;
             }
             writeChunk(1, offset_cache, CHUNK_SIZE, key,t);
-            cout<<chunk_map[victim].key<<endl;
+            // cout<<chunk_map[victim].key<<endl;
             writeBack(&chunk_map[victim],t);
         }
 
@@ -632,7 +632,7 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
         if (action == 0)
         {
             // key
-            isDirty(&chunk_map_w[key]);
+            isDirty(&chunk_map[key]);
             accessWriteKey(key, false);
             write_to_readCache(key,1, t);
             
@@ -781,7 +781,7 @@ void Sl::isDirty(chunk *arg){
 
 void Sl::writeDisk(const long long &key,struct timeval t)
 {
-    // cout << "writeDisk" << endl;
+    
     writeChunk(0, key, CHUNK_SIZE,key,t);
 }
 
