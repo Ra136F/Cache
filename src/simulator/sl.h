@@ -34,6 +34,7 @@
 
 using namespace std;
 
+
 int turn = 0;  // q-learning训练轮次
 int currentAction = 0;
 int lastAction = 0; //上一次执行的动作，1为写入smr，0为其他
@@ -60,6 +61,7 @@ struct CurrentState {
   	int last_Action;
 };
 
+CurrentState currentState;
 
 int calculate_timeInterval(long long currentTime, long long lastTime) {
     long long interval = currentTime - lastTime;
@@ -206,6 +208,9 @@ protected:
     virtual ll getVictim() = 0;
     virtual ll getVictim2() = 0;
     virtual ll getWriteVictim()=0 ;
+
+    int qLearn(struct timeval t);
+    void updateQtable(struct timeval t,int action);
 };
 
 bool Sl::readItem(vector<ll> &keys,struct timeval t)
@@ -221,7 +226,6 @@ bool Sl::readItem(vector<ll> &keys,struct timeval t)
        
         if (isCached(keys[i]))
         {
-            // ͳ��������
             isReadCache=1;
             st.read_hit_nums += 1;
             // cout<<"读命中读缓冲区"<<endl;
@@ -318,8 +322,8 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
         // cache full
         else
         {
-            ll victim=getVictim2();
-            removeKey(victim, 1);
+            ll victim=getVictim();
+            // removeKey(victim, 1);
             assert(victim != -1);
             ll offset_cache = chunk_map[victim].offset_cache;
             chunk_map[victim].offset_cache = -1;
@@ -366,7 +370,17 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
             }
             isDirty(&chunk_map_w[key]);
             writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
-            writeBack(&chunk_map_w[victim],t);
+            int action=qLearn(t);
+            if(action==1)
+            {
+                writeBack(&chunk_map_w[victim],t);
+            }else {
+                //todo
+                chunk_map_w[victim].dirty=0;
+                accessKey(victim, false);
+                write_to_readCache(victim, 1, t);
+            }
+           updateQtable(t, action);
         }
     }
 }
@@ -610,57 +624,32 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
     else
     {
         fd = fd_disk;
-        int action=0;
-        struct timeval current_t;
-        gettimeofday(&current_t, NULL);
-        currentTime = current_t.tv_sec * 1000000 + current_t.tv_usec;
-        // record time interval
-        
-        currentState.current_IO = calculate_timeInterval(currentTime, lastTime);
-        currentState.last_IO = calculate_timeInterval(lastTime, llTime);
-        currentState.last_Action = lastAction;
-        if(turn!=0)
-        {
-            action = chooseAction(currentState);
-        }
-        else {
-        action=1;
-        }
-       cout<<"c-l:"<<currentTime-lastTime<<":action:"<<action<<endl;
-       outputFile1<<"c-l:"<<currentTime-lastTime<<":action:"<<action<<"\n";
+        char *buffer = nullptr;
+        fd = fd_disk;
+        int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
+        assert(res == 0);
+        strcpy(buffer, "Ram15978");
+        res = pwrite64(fd, buffer, size, offset);
+        assert(res == size);
+        free(buffer);
+    //    cout<<"c-l:"<<currentTime-lastTime<<":action:"<<action<<endl;
+    //    outputFile1<<"c-l:"<<currentTime-lastTime<<":action:"<<action<<"\n";
         //
-        if (action == 0)
-        {
-            // key
-            isDirty(&chunk_map[key]);
-            accessWriteKey(key, false);
-            write_to_readCache(key,1, t);
+        // if (action == 0)
+        // {
+        //     // key
+        //     isDirty(&chunk_map[key]);
+        //     accessWriteKey(key, false);
+        //     write_to_readCache(key,1, t);
             
-        }
-        // write to smr
-        else
-        {
-            char *buffer = nullptr;
-            fd = fd_disk;
-            int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
-            assert(res == 0);
-            strcpy(buffer, "Ram15978");
-            res = pwrite64(fd, buffer, size, offset);
-            assert(res == size);
-            free(buffer);
-        }
-        struct timeval t2;
-        gettimeofday(&t2, NULL);
-        long long deltaT = (t2.tv_sec - t.tv_sec) * 1000000 + (t2.tv_usec - t.tv_usec);
-        //奖励
-        double award = returnAward(currentState, deltaT);
-        //更新Q表
-        qTable[currentState.current_IO][currentState.last_IO][currentState.last_Action][action] += award*0.1;
-        //记录当前动作作为下一状态的前一次执行动作
-        lastAction = action;
-        turn++;
-        llTime = lastTime;
-        lastTime = currentTime;
+        // }
+        // // write to smr
+        // else
+        // {
+     
+        // }
+        
+
     }
 }
 
@@ -678,30 +667,33 @@ void Sl::write_to_readCache(const ll &key, int isReadCache, struct timeval t)
             // cout << "cache not full" << endl;
             ll offset_cache = free_cache.back();
             chunk item = {key, offset_cache};
-            chunk_map_w[key] = item;
+            chunk_map[key] = item;
+            chunk_map[key].dirty=1;
             free_cache.pop_back();
             writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
         }
         // cache full
         else
         {
-            ll victim = getVictim2();
-            removeKey(victim, 1);
+            ll victim = getVictim();
+            // removeKey(victim, 1);
             assert(victim != -1);
             ll offset_cache = chunk_map[victim].offset_cache;
             chunk_map[victim].offset_cache = -1;
-            if (chunk_map_w.count(key) == 0)
+            if (chunk_map.count(key) == 0)
 
             {
                 chunk item = {key, offset_cache};
-                chunk_map_w[key] = item;
+                chunk_map[key] = item;
+                
             }
             else
             {
-                chunk_map_w[key].offset_cache = offset_cache;
+                chunk_map[key].offset_cache = offset_cache;
             }
+            chunk_map[key].dirty=1;
             writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
-            // writeBack(&chunk_map_w[victim],t);
+            writeBack(&chunk_map[victim],t);
         }
     }
 }
@@ -841,6 +833,47 @@ void Sl::remove(const ll &key,int isReadCache,struct timeval t)
         writeBack(&chunk_map_w[victim],t);
     }
     
+}
+
+int Sl::qLearn(struct timeval t)
+{
+    currentState.current_IO=0;
+    currentState.last_Action=0;
+    currentState.last_IO=0;
+    int action = 0;
+    struct timeval current_t;
+    gettimeofday(&current_t, NULL);
+    currentTime = current_t.tv_sec * 1000000 + current_t.tv_usec;
+    // record time interval
+    currentState.current_IO = calculate_timeInterval(currentTime, lastTime);
+    currentState.last_IO = calculate_timeInterval(lastTime, llTime);
+    currentState.last_Action = lastAction;
+    if (turn != 0)
+    {
+        action = chooseAction(currentState);
+    }
+    else
+    {
+        action = 1;
+    }
+
+    return action;
+}
+
+void Sl::updateQtable(struct timeval t,int action)
+{
+    struct timeval t2;
+    gettimeofday(&t2, NULL);
+    long long deltaT = (t2.tv_sec - t.tv_sec) * 1000000 + (t2.tv_usec - t.tv_usec);
+        //奖励
+    double award = returnAward(currentState, deltaT);
+        //更新Q表
+    qTable[currentState.current_IO][currentState.last_IO][currentState.last_Action][action] += award*0.1;
+        //记录当前动作作为下一状态的前一次执行动作
+    lastAction = action;
+    turn++;
+    llTime = lastTime;
+    lastTime = currentTime;
 }
 
 
