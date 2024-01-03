@@ -63,6 +63,10 @@ class fixed_sized_cache
         return victim;
     }
 
+    Key getVictim2()
+    {
+        return cache_policy.ReplCandidate();
+    }
     /**
      * \brief Put element into the cache
      * \param[in] key Key value to use

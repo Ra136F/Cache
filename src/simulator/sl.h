@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <streambuf>
-#include <fstream>
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include <string>
@@ -47,9 +47,9 @@ double greedy = 0.8;
 //奖励函数时间阈值
  ////t1=90,t2=40000,t3=70000,t4=200000,t5=3000000
  //80 15000 25000 35000 100000
-double t1 = 1500;
+double t1 = 2000;
 
-double t2 = 5000;
+double t2 = 6000;
 
 struct CurrentState {
 	//当前I/O间隔 
@@ -63,13 +63,13 @@ struct CurrentState {
 
 int calculate_timeInterval(long long currentTime, long long lastTime) {
     long long interval = currentTime - lastTime;
-    if (interval <= 5) {
+    if (interval <= 500) {
         return 0;
     }
-    else if (interval > 5 && interval <= 10) {
+    else if (interval > 500 && interval <= 1500) {
         return 1;
     }
-    else if (interval > 10 && interval <= 18)
+    else if (interval > 1500 && interval <= 4000)
     {
         return 2;
     }
@@ -142,7 +142,7 @@ int chooseAction(CurrentState currentState){
 
 
 
-
+std::ofstream outputFile1;
 
 class Sl
 {
@@ -156,6 +156,7 @@ protected:
     long long curKey;
     vector<long long> free_cache;
     vector<long long> free_cache_w;
+    vector<char* >cl;
     map<long long, chunk> chunk_map;
     map<long long, chunk> chunk_map_w;
     Statistic st;
@@ -170,6 +171,8 @@ protected:
     bool readItem(vector<ll> &keys,struct timeval t);
     bool writeItem(vector<ll> &keys,struct timeval t);
     virtual void writeCache(const ll &key,int isReadCache,struct timeval t);
+
+    void write_to_readCache(const ll &key, int isReadCache, struct timeval t);
 
     void writeBack(chunk *arg,struct timeval t);
 
@@ -201,6 +204,7 @@ protected:
     virtual void accessWriteKey(const ll &key, const bool &isGet) = 0 ;
     virtual bool removeKey(const ll &key,int isReadCache)=0;
     virtual ll getVictim() = 0;
+    virtual ll getVictim2() = 0;
     virtual ll getWriteVictim()=0 ;
 };
 
@@ -314,7 +318,8 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
         // cache full
         else
         {
-            ll victim=getVictim();
+            ll victim=getVictim2();
+            removeKey(victim, 1);
             assert(victim != -1);
             ll offset_cache = chunk_map[victim].offset_cache;
             chunk_map[victim].offset_cache = -1;
@@ -328,6 +333,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                 chunk_map[key].offset_cache = offset_cache;
             }
             writeChunk(1, offset_cache, CHUNK_SIZE, key,t);
+            cout<<chunk_map[victim].key<<endl;
             writeBack(&chunk_map[victim],t);
         }
 
@@ -485,6 +491,8 @@ void Sl::initFile()
     assert(fd_cache >= 0);
     fd_disk = open(DISK_PATH, O_RDWR | O_DIRECT, 0664);
     assert(fd_disk >= 0);
+    
+    outputFile1.open("../result/cl.txt");
 }
 
 void Sl::closeFile()
@@ -492,6 +500,7 @@ void Sl::closeFile()
     close(fd_cache);
     close(fd_disk);
     close(fd_cache_w);
+    outputFile1.close();
 }
 
 void Sl::printFreeCache()
@@ -505,7 +514,6 @@ void Sl::printFreeCache()
     // cout << free_cache.back() << endl;
 }
 
-// д�أ��ж����ݿ��Ƿ�Ϊ��
 void Sl::writeBack(chunk *arg,struct timeval t)
 {
     if (arg->dirty == 1)
@@ -513,8 +521,6 @@ void Sl::writeBack(chunk *arg,struct timeval t)
         arg->dirty = 0;
         writeDisk(arg->key,t);
     }
-    // ��飺Q-Learning����SMR�����ж��Ƿ�д��
-    // SMRæ����һ��ֵ��ѡ��ɾ���?
 }
 
 void Sl::normRead(bool isCache, const long long &offset, const long long &size)
@@ -556,7 +562,7 @@ void Sl::odirectRead(int isCache, const long long &offset, const long long &size
     if (isCache==1)
         fd = fd_cache;
     else if(isCache==2)
-        fd = fd_cache_w;
+        fd = fd_cache;
     else
         fd = fd_disk;
     assert(fd >= 0);
@@ -590,7 +596,7 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
 
     else if (isCache == 2)
     {
-        fd = fd_cache_w;
+        fd = fd_cache;
 
         assert(fd >= 0);
         char *buffer = nullptr;
@@ -621,13 +627,14 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
         action=1;
         }
        cout<<"c-l:"<<currentTime-lastTime<<":action:"<<action<<endl;
+       outputFile1<<"c-l:"<<currentTime-lastTime<<":action:"<<action<<"\n";
         //
         if (action == 0)
         {
             // key
-            isDirty(&chunk_map[key]);
-            accessKey(key, false);
-            writeCache(key, 1,t);
+            isDirty(&chunk_map_w[key]);
+            accessWriteKey(key, false);
+            write_to_readCache(key,1, t);
             
         }
         // write to smr
@@ -655,13 +662,48 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
         llTime = lastTime;
         lastTime = currentTime;
     }
+}
 
-     
+void Sl::write_to_readCache(const ll &key, int isReadCache, struct timeval t)
+{
+    // cout << "writeCache: ";
+    if (!isWriteCache())
+        return;
+    // cache not full
+    if (isReadCache == 1)
+    {
+        if (!free_cache.empty())
 
+        {
+            // cout << "cache not full" << endl;
+            ll offset_cache = free_cache.back();
+            chunk item = {key, offset_cache};
+            chunk_map_w[key] = item;
+            free_cache.pop_back();
+            writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
+        }
+        // cache full
+        else
+        {
+            ll victim = getVictim2();
+            removeKey(victim, 1);
+            assert(victim != -1);
+            ll offset_cache = chunk_map[victim].offset_cache;
+            chunk_map[victim].offset_cache = -1;
+            if (chunk_map_w.count(key) == 0)
 
-
-
-
+            {
+                chunk item = {key, offset_cache};
+                chunk_map_w[key] = item;
+            }
+            else
+            {
+                chunk_map_w[key].offset_cache = offset_cache;
+            }
+            writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
+            // writeBack(&chunk_map_w[victim],t);
+        }
+    }
 }
 
 //isCache�޸�Ϊint���ͣ�1��ʾ�����棬2��ʾд��������
@@ -693,9 +735,13 @@ void Sl::printChunk(chunk *arg)
 
 void Sl::initFreeCache()
 {
-    for (long long i = 0; i < CACHE_SIZE; i++)
+    for (long long i = 0; i < CACHE_SIZE/2; i++)
     {
         free_cache.push_back(i * CHUNK_SIZE);
+        
+    }
+    for(long long i=CACHE_SIZE/2;i< CACHE_SIZE;i++)
+    {
         free_cache_w.push_back(i * CHUNK_SIZE);
     }
 }
@@ -752,30 +798,33 @@ void Sl::remove(const ll &key,int isReadCache,struct timeval t)
     assert(status);
     // assert(isCached(key));
     accessWriteKey(key, false);
-    if (isReadCache == 1)
-    {
-        // free_cache.insert(chunk_map[key].offset_cache,chunk_map[key].offset_cache/CHUNK_SIZE);
-        free_cache.push_back(chunk_map[key].offset_cache);
-        // cout<<key<<"==============================================================================================="<<endl;
-    }
-    else
-    {
-        free_cache_w.push_back(chunk_map_w[key].offset_cache);
-    }
-    chunk_map[key].offset_cache=-1;
+    // if (isReadCache == 1)
+    // {
+    //     free_cache.push_back(chunk_map[key].offset_cache);
+    // }
+    // else
+    // {
+    //     free_cache_w.push_back(chunk_map_w[key].offset_cache);
+    // }
+    // free_cache.push_back(chunk_map[key].offset_cache);
+    
     if (!free_cache_w.empty())
     {
-        ll offset_cache = free_cache_w.back();
+
+        ll offset_cache = chunk_map[key].offset_cache;
+        free_cache.push_back(free_cache_w.back());
         chunk item = {key, offset_cache};
         chunk_map_w[key] = item;
         free_cache_w.pop_back();
         writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
+        chunk_map[key].offset_cache=-1;
     }
     else
     {
         ll victim = getWriteVictim();
         assert(victim != -1);
-        ll offset_cache = chunk_map_w[victim].offset_cache;
+        ll offset_cache = chunk_map[key].offset_cache;
+        free_cache.push_back(chunk_map_w[victim].offset_cache);
         chunk_map_w[victim].offset_cache = -1;
         if (chunk_map_w.count(key) == 0)
         {
@@ -786,10 +835,12 @@ void Sl::remove(const ll &key,int isReadCache,struct timeval t)
         {
             chunk_map_w[key].offset_cache = offset_cache;
         }
+        chunk_map[key].offset_cache=-1;
         // chunk_map[key].dirty=1;
         writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
         writeBack(&chunk_map_w[victim],t);
     }
+    
 }
 
 
