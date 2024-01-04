@@ -79,7 +79,7 @@ def output_file(file_path, indexes, types, chunk_size, disk_size, trace_size):
 
 if __name__ == '__main__':
     # process trace
-    file_name = "tracea_runw.txt"
+    file_name = "tracea_run37.txt"
     input_path = "/home/lxf/work/code/Caching-Policy/Caching-Policy/trace/zipfian/"
     # output_path = "D:/Projects/Caching-Policy/Caching-Policy/trace/YCSB-KVTracer/"
     output_path = "/home/lxf/work/code/Caching-Policy/Caching-Policy/trace/zipfian/100w_28_4k/"
