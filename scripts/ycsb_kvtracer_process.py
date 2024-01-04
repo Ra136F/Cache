@@ -79,10 +79,10 @@ def output_file(file_path, indexes, types, chunk_size, disk_size, trace_size):
 
 if __name__ == '__main__':
     # process trace
-    file_name = "tracea_run.txt"
+    file_name = "tracea_run55.txt"
     input_path = "/home/lxf/work/code/Caching-Policy/Caching-Policy/trace/zipfian/"
     # output_path = "D:/Projects/Caching-Policy/Caching-Policy/trace/YCSB-KVTracer/"
-    output_path = "/home/lxf/work/code/Caching-Policy/Caching-Policy/trace/zipfian/10w_82_4k/"
+    output_path = "/home/lxf/work/code/Caching-Policy/Caching-Policy/trace/zipfian/100w_28_4k/"
     keys, types = read_trace_from_file(input_path + file_name)
     indexes, disk_size = frequency_counter(keys)
     chunk_size = 4 * 1024
@@ -96,10 +96,10 @@ if __name__ == '__main__':
     disk_size=disk_size*4*1024
     chunk_num=disk_size
     print(disk_size,chunk_num)
-    create_file(storage_path+"disk.bin",disk_size)
+    # create_file(storage_path+"disk.bin",disk_size)
     # create_file(storage_path+"cache_0.02.bin",chunk_num*0.02)
     # create_file(storage_path+"cache_0.04.bin",chunk_num*0.04)
     # create_file(storage_path+"cache_0.06.bin",chunk_num*0.06)
     # create_file(storage_path+"cache_0.08.bin",chunk_num*0.08)
-    create_file(cache_path+"cache_0.1.bin",chunk_num*0.1)
+    # create_file(cache_path+"cache_0.1.bin",chunk_num*0.1)
     print("done generate storage")
