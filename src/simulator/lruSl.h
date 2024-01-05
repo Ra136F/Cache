@@ -13,9 +13,9 @@ private:
     template <typename Key, typename Value>
     using lru_cache_t = typename caches::fixed_sized_cache<Key, Value, caches::LRU>;
     //定义读缓存
-    lru_cache_t<long long, bool> cache_map{HALF_SIZE};
+    lru_cache_t<long long, bool> cache_map{CACHE_SIZE};
     //定义写缓存,CACHE_SIZE+write_CACHE_SIZE为一个固定值
-    lru_cache_t<long long, bool> write_cache_map{HALF_SIZE};
+    lru_cache_t<long long, bool> write_cache_map{CACHE_SIZE};
 
     bool isCached(const ll &key);
     bool isWriteCached(const ll &key);
@@ -25,7 +25,20 @@ private:
     ll getVictim();
     ll getVictim2();
     ll getWriteVictim();
+    ll getWriteVictim2();
+    size_t getMax(int isRead);
 };
+
+ size_t LruSl::getMax(int isRead)
+ {
+    if(isRead==1)
+    {
+        return cache_map.getSize();
+    }
+    else {
+        return write_cache_map.getSize();
+    }
+ }
 
 LruSl::LruSl():Sl(){
     st.caching_policy = "lru";
@@ -74,6 +87,10 @@ void LruSl::accessWriteKey(const ll &key, const bool &isGet)
 
 ll LruSl::getWriteVictim(){
     return write_cache_map.getVictim();
+}
+
+ll LruSl::getWriteVictim2(){
+    return write_cache_map.getVictim2();
 }
 
 

@@ -67,6 +67,18 @@ class fixed_sized_cache
     {
         return cache_policy.ReplCandidate();
     }
+
+    void setMax(int add)
+    {
+
+        this->max_cache_size=max_cache_size+add;
+    }
+
+    std::size_t getSize()
+    {
+        return cache_items_map.size();
+    }
+
     /**
      * \brief Put element into the cache
      * \param[in] key Key value to use
