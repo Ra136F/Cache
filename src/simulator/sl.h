@@ -243,7 +243,7 @@ bool Sl::readItem(vector<ll> &keys,struct timeval t)
             isReadCache=2;
             accessWriteKey(keys[i], true);
             st.read_hit_nums += 1;
-            readCache(chunk_map[keys[i]].offset_cache,isReadCache);
+            readCache(chunk_map_w[keys[i]].offset_cache,isReadCache);
             keys[i] = -1;
         }
         
@@ -280,7 +280,7 @@ bool Sl::writeItem(vector<ll> &keys,struct timeval t)
             accessWriteKey(keys[i], false);
             // �޸�readCache��readChunk
             //  readCache(chunk_map[keys[i]].offset_cache);
-            coverageCache(&chunk_map[keys[i]],t);
+            coverageCache(&chunk_map_w[keys[i]],t);
             // chunk_map[keys[i]].offset_cache=-1;
             keys[i] = -1;
         }
@@ -335,24 +335,29 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
         }
         writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
     }else if (isReadCache==2) {
+        // int action=qLearn(t);
         ll offset_cache=0;
         if(getMax(2)>P_SIZE)
         {
             //full
+            // if(action==1)
+            // {
             ll victim=getWriteVictim2();
-            removeKey(victim, 1);
-            chunk_map[victim].offset_cache=-1;
-            writeBack(&chunk_map[victim], t);
+            removeKey(victim, 2);
+            chunk_map_w[victim].offset_cache=-1;
+            writeBack(&chunk_map_w[victim], t);
+            // }
         }
-        if (chunk_map.count(key) == 0)
+        if (chunk_map_w.count(key) == 0)
         {
             chunk item = {key, offset_cache};
-            chunk_map[key] = item;
+            chunk_map_w[key] = item;
         }
         else
         {
-            chunk_map[key].offset_cache = offset_cache;
+            chunk_map_w[key].offset_cache = offset_cache;
         }
+        chunk_map_w[key].dirty=1;
         writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
     }
 }
@@ -735,18 +740,18 @@ void Sl::remove(const ll &key,int isReadCache,struct timeval t)
     {
         // full
         ll victim = getWriteVictim2();
-        removeKey(victim, 1);
-        chunk_map[victim].offset_cache = -1;
-        writeBack(&chunk_map[victim], t);
+        removeKey(victim, 2);
+        chunk_map_w[victim].offset_cache = -1;
+        writeBack(&chunk_map_w[victim], t);
     }
-    if (chunk_map.count(key) == 0)
+    if (chunk_map_w.count(key) == 0)
     {
         chunk item = {key, offset_cache};
-        chunk_map[key] = item;
+        chunk_map_w[key] = item;
     }
     else
     {
-        chunk_map[key].offset_cache = offset_cache;
+        chunk_map_w[key].offset_cache = offset_cache;
     }
     writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
 }
