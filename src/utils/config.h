@@ -13,6 +13,7 @@ const char *CACHE_PATH_W = "/data2/Cache/cache_0.2.bin";
 const long long CACHE_SIZE = CHUNK_NUM * 0.1;
 
 const long long HALF_SIZE = CACHE_SIZE*0.5;
+const long long P_SIZE = CACHE_SIZE*0.8;
 const char *DISK_PATH = "/SMR/db/storage/disk28.bin";
 
 typedef long long ll;
