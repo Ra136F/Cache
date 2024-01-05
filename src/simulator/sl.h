@@ -243,7 +243,7 @@ bool Sl::readItem(vector<ll> &keys,struct timeval t)
             isReadCache=2;
             accessWriteKey(keys[i], true);
             st.read_hit_nums += 1;
-            readCache(chunk_map_w[keys[i]].offset_cache,isReadCache);
+            readCache(chunk_map[keys[i]].offset_cache,isReadCache);
             keys[i] = -1;
         }
         
@@ -280,7 +280,7 @@ bool Sl::writeItem(vector<ll> &keys,struct timeval t)
             accessWriteKey(keys[i], false);
             // �޸�readCache��readChunk
             //  readCache(chunk_map[keys[i]].offset_cache);
-            coverageCache(&chunk_map_w[keys[i]],t);
+            coverageCache(&chunk_map[keys[i]],t);
             // chunk_map[keys[i]].offset_cache=-1;
             keys[i] = -1;
         }
@@ -313,139 +313,47 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
     // cout << "writeCache: ";
     if (!isWriteCache())
         return;
-    // cache not full
+ 
     if(isReadCache==1){
-        if (!free_cache.empty())
+        ll offset_cache=0;
+        if(getMax(1)>(CACHE_SIZE-P_SIZE))
         {
-            // cout << "cache not full" << endl;
-            ll offset_cache = free_cache.back();
+            //full
+            ll victim=getVictim2();
+            removeKey(victim, 1);
+            chunk_map[victim].offset_cache=-1;
+            writeBack(&chunk_map[victim], t);
+        }
+        if (chunk_map.count(key) == 0)
+        {
             chunk item = {key, offset_cache};
             chunk_map[key] = item;
-            free_cache.pop_back();
-            writeChunk(1, offset_cache, CHUNK_SIZE, key,t);
         }
-        // cache full
         else
         {
-            if(cAction==0&&lAction==0&&getMax(2)>HALF_SIZE)
-            {
-                ll victim = getWriteVictim2();
-                assert(victim != -1);
-                removeKey(victim, 2);
-                ll offset_cache=chunk_map_w[victim].offset_cache;
-                chunk_map_w[victim].offset_cache=-1;
-                if (chunk_map.count(key) == 0)
-                {
-                    chunk item = {key, offset_cache};
-                    chunk_map[key] = item;
-                }
-                else
-                {
-                    chunk_map[key].offset_cache = offset_cache;
-                }
-                writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
-                writeBack(&chunk_map_w[victim], t);
-            }else 
-            {
-                ll victim = getVictim2();
-                // removeKey(victim, 1);
-                assert(victim != -1);
-                removeKey(victim, 1);
-                ll offset_cache = chunk_map[victim].offset_cache;
-                chunk_map[victim].offset_cache = -1;
-                if (chunk_map.count(key) == 0)
-                {
-                    chunk item = {key, offset_cache};
-                    chunk_map[key] = item;
-                }
-                else
-                {
-                    chunk_map[key].offset_cache = offset_cache;
-                }
-                writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
-                // cout<<chunk_map[victim].key<<endl;
-                writeBack(&chunk_map[victim], t);
-            }
+            chunk_map[key].offset_cache = offset_cache;
         }
-
+        writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
     }else if (isReadCache==2) {
-        if (!free_cache_w.empty())
+        ll offset_cache=0;
+        if(getMax(2)>P_SIZE)
         {
-            // cout << "cache not full" << endl;
-            ll offset_cache = free_cache_w.back();
-            chunk item = {key, offset_cache};
-            chunk_map_w[key] = item;
-            free_cache_w.pop_back();
-            isDirty(&chunk_map_w[key]);
-            writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
+            //full
+            ll victim=getWriteVictim2();
+            removeKey(victim, 1);
+            chunk_map[victim].offset_cache=-1;
+            writeBack(&chunk_map[victim], t);
         }
-        // cache full
+        if (chunk_map.count(key) == 0)
+        {
+            chunk item = {key, offset_cache};
+            chunk_map[key] = item;
+        }
         else
         {
-            int action = qLearn(t);
-            ll offset_cache;
-            if(action==0&&getMax(2)<=P_SIZE)
-            {
-                // todo
-                if (!free_cache.empty())
-                {
-                    offset_cache = free_cache.back();
-                    free_cache.pop_back();
-                    // free_cache.push_back(chunk_map_w[victim].offset_cache);
-                    if (chunk_map_w.count(key) == 0)
-                    {
-                        chunk item = {key, offset_cache};
-                        chunk_map_w[key] = item;
-                    }
-                    else
-                    {
-                        chunk_map_w[key].offset_cache = offset_cache;
-                    }
-                    writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
-                }
-                else
-                {
-                    ll victim2 = getVictim2();
-                    assert(victim2 != 1);
-                    removeKey(victim2, 1);
-                    offset_cache = chunk_map[victim2].offset_cache;
-                    chunk_map[victim2].offset_cache = -1;
-                    if (chunk_map_w.count(key) == 0)
-                    {
-                        chunk item = {key, offset_cache};
-                        chunk_map_w[key] = item;
-                    }
-                    else
-                    {
-                        chunk_map_w[key].offset_cache = offset_cache;
-                    }
-                    writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
-                }
-                // chunk_map_w[victim].offset_cache = -1;
-                // isDirty(&chunk_map_w[key]);
-               
-            }else 
-            {
-                ll victim = getWriteVictim2();
-                assert(victim != -1);
-                ll offset_cache = chunk_map_w[victim].offset_cache;
-                chunk_map_w[victim].offset_cache = -1;
-                if (chunk_map_w.count(key) == 0)
-                {
-                    chunk item = {key, offset_cache};
-                    chunk_map_w[key] = item;
-                }
-                else
-                {
-                    chunk_map_w[key].offset_cache = offset_cache;
-                }
-                isDirty(&chunk_map_w[key]);
-                writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
-                removeKey(victim, 2);
-                writeBack(&chunk_map_w[victim], t);
-            }
-           updateQtable(t, action);
+            chunk_map[key].offset_cache = offset_cache;
         }
+        writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
     }
 }
 
@@ -775,7 +683,7 @@ void Sl::readCache(const ll &offset_cache,int isReadCache)
 {
     // printf("readCache\n");
     assert(offset_cache != -1);
-    readChunk(isReadCache, offset_cache, CHUNK_SIZE);
+    readChunk(isReadCache, 0, CHUNK_SIZE);
 }
 
 void Sl::readDisk(const long long &key)
@@ -797,7 +705,7 @@ void Sl::coverageCache(chunk *arg,struct timeval t)
 {
     // cout << "coverageCache" << endl;
     arg->dirty = 1;
-    writeChunk(2, arg->offset_cache, CHUNK_SIZE,arg->key,t);
+    writeChunk(2, 0, CHUNK_SIZE,arg->key,t);
 }
 
 void Sl::isDirty(chunk *arg){
@@ -821,52 +729,26 @@ void Sl::remove(const ll &key,int isReadCache,struct timeval t)
 {
     auto status=removeKey(key, 1);
     assert(status);
-    // assert(isCached(key));
     accessWriteKey(key, false);
-    // if (isReadCache == 1)
-    // {
-    //     free_cache.push_back(chunk_map[key].offset_cache);
-    // }
-    // else
-    // {
-    //     free_cache_w.push_back(chunk_map_w[key].offset_cache);
-    // }
-    // free_cache.push_back(chunk_map[key].offset_cache);
-    
-    if (!free_cache_w.empty())
+    ll offset_cache = 0;
+    if (getMax(2) > P_SIZE)
     {
-
-        ll offset_cache = chunk_map[key].offset_cache;
-        free_cache.push_back(free_cache_w.back());
+        // full
+        ll victim = getWriteVictim2();
+        removeKey(victim, 1);
+        chunk_map[victim].offset_cache = -1;
+        writeBack(&chunk_map[victim], t);
+    }
+    if (chunk_map.count(key) == 0)
+    {
         chunk item = {key, offset_cache};
-        chunk_map_w[key] = item;
-        free_cache_w.pop_back();
-        writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
-        chunk_map[key].offset_cache=-1;
+        chunk_map[key] = item;
     }
     else
     {
-        ll victim = getWriteVictim2();
-        assert(victim != -1);
-        removeKey(victim, 2);
-        ll offset_cache = chunk_map[key].offset_cache;
-        free_cache.push_back(chunk_map_w[victim].offset_cache);
-        chunk_map_w[victim].offset_cache = -1;
-        if (chunk_map_w.count(key) == 0)
-        {
-            chunk item = {key, offset_cache};
-            chunk_map_w[key] = item;
-        }
-        else
-        {
-            chunk_map_w[key].offset_cache = offset_cache;
-        }
-        chunk_map[key].offset_cache=-1;
-        // chunk_map[key].dirty=1;
-        writeChunk(2, offset_cache, CHUNK_SIZE,key,t);
-        writeBack(&chunk_map_w[victim],t);
+        chunk_map[key].offset_cache = offset_cache;
     }
-    
+    writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
 }
 
 int Sl::qLearn(struct timeval t)
