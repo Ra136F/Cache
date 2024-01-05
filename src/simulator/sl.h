@@ -120,9 +120,9 @@ int chooseAction(CurrentState currentState){
       greedy = 0.6;
     } else if (turn > 500 && turn <= 1000) {
       greedy = 0.4;
-    } else if (turn > 1000 && turn <= 2000) {
+    } else if (turn > 1000 && turn <= 1500) {
       greedy = 0.2;
-    } else if (turn > 2000 && turn <= 5000) {
+    } else if (turn > 1500 && turn <= 2000) {
       greedy = 0.1;
     } else {
       greedy = 0.05;
@@ -384,8 +384,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
         {
             int action = qLearn(t);
             ll offset_cache;
-            action=1;
-            if(action==0&&getMax(2)<P_SIZE)
+            if(action==0&&getMax(2)<=P_SIZE)
             {
                 // todo
                 if (!free_cache.empty())
@@ -402,6 +401,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                     {
                         chunk_map_w[key].offset_cache = offset_cache;
                     }
+                    writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
                 }
                 else
                 {
@@ -419,10 +419,11 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                     {
                         chunk_map_w[key].offset_cache = offset_cache;
                     }
+                    writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
                 }
                 // chunk_map_w[victim].offset_cache = -1;
                 // isDirty(&chunk_map_w[key]);
-                writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
+               
             }else 
             {
                 ll victim = getWriteVictim2();
@@ -490,15 +491,15 @@ void Sl::test()
         switch (type)
         {
         case 0:
-            cout<<"read"<<endl;
+            // cout<<"read"<<endl;
             isTraceHit = readItem(keys,t1);
             break;
         case 1:
-            cout<<"write"<<endl;
+            // cout<<"write"<<endl;
             isTraceHit = writeItem(keys,t1);
             break;
         }
-
+        // cout<<"读写缓存相加:"<<getMax(1)+getMax(2)<<endl;
         gettimeofday(&t2, NULL);
         long long deltaT = (t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec);
         st.latency_v.push_back(deltaT);
@@ -660,60 +661,26 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
     if (isCache == 1)
     {
         fd = fd_cache;
-
         assert(fd >= 0);
-        char *buffer = nullptr;
-        int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
-        assert(res == 0);
-        strcpy(buffer, "Ram15978");
-        res = pwrite64(fd, buffer, size, offset);
-        assert(res == size);
-        free(buffer);
+
     }
 
     else if (isCache == 2)
     {
         fd = fd_cache;
-
         assert(fd >= 0);
-        char *buffer = nullptr;
-        int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
-        assert(res == 0);
-        strcpy(buffer, "Ram15978");
-        res = pwrite64(fd, buffer, size, offset);
-        assert(res == size);
-        free(buffer);
     }
     else
     {
         fd = fd_disk;
+    }
         char *buffer = nullptr;
-        fd = fd_disk;
         int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
         assert(res == 0);
         strcpy(buffer, "Ram15978");
         res = pwrite64(fd, buffer, size, offset);
         assert(res == size);
         free(buffer);
-    //    cout<<"c-l:"<<currentTime-lastTime<<":action:"<<action<<endl;
-    //    outputFile1<<"c-l:"<<currentTime-lastTime<<":action:"<<action<<"\n";
-        //
-        // if (action == 0)
-        // {
-        //     // key
-        //     isDirty(&chunk_map[key]);
-        //     accessWriteKey(key, false);
-        //     write_to_readCache(key,1, t);
-            
-        // }
-        // // write to smr
-        // else
-        // {
-     
-        // }
-        
-
-    }
 }
 
 void Sl::write_to_readCache(const ll &key, int isReadCache, struct timeval t)
@@ -923,7 +890,7 @@ int Sl::qLearn(struct timeval t)
     {
         action = 1;
     }
-
+    // cout<<"qLear训练次数:"<<turn<<endl;
     return action;
 }
 
