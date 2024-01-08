@@ -5,3 +5,6 @@ result/statistic.txt
 result/**
 trace/**
 test/**
+lruSl.h
+sl.h
+lru.hpp

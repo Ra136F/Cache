@@ -13,32 +13,27 @@ private:
     template <typename Key, typename Value>
     using lru_cache_t = typename caches::fixed_sized_cache<Key, Value, caches::LRU>;
     //定义读缓存
-    lru_cache_t<long long, bool> cache_map{CACHE_SIZE};
+    lru_cache_t<long long, bool> cache_map{HALF_SIZE};
     //定义写缓存,CACHE_SIZE+write_CACHE_SIZE为一个固定值
-    lru_cache_t<long long, bool> write_cache_map{CACHE_SIZE};
+    lru_cache_t<long long, bool> write_cache_map{HALF_SIZE};
+
+    //read/write mixed cache
+    lru_cache_t<long long, bool> ssdCache_map{HALF_SIZE};
+    // bigger cache
+    lru_cache_t<long long, bool> hotCache_map{HALF_SIZE};
 
     bool isCached(const ll &key);
     bool isWriteCached(const ll &key);
     bool removeKey(const ll &key,int isReadCache);
     void accessKey(const ll &key, const bool &isGet);
     void accessWriteKey(const ll &key, const bool &isGet);
+    bool compareHotCache(const ll &key1, const ll &key2);
+    void accessHotCacheKey(const ll &key, const bool &isGet);
+    ll getPrevoisKey(const ll &key);
     ll getVictim();
     ll getVictim2();
     ll getWriteVictim();
-    ll getWriteVictim2();
-    size_t getMax(int isRead);
 };
-
- size_t LruSl::getMax(int isRead)
- {
-    if(isRead==1)
-    {
-        return cache_map.getSize();
-    }
-    else {
-        return write_cache_map.getSize();
-    }
- }
 
 LruSl::LruSl():Sl(){
     st.caching_policy = "lru";
@@ -64,6 +59,13 @@ ll LruSl::getVictim2(){
     return cache_map.getVictim2();
 }
 
+ll LruS1::getWV() {
+    return write_cache_map.get_W_Victim();
+}
+
+ll LruS1::getRV() {
+    return cache_map.get_R_Victim();
+}
 
 //判断写缓存中数据是否命中
 bool LruSl::isWriteCached(const ll &key)
@@ -89,11 +91,49 @@ ll LruSl::getWriteVictim(){
     return write_cache_map.getVictim();
 }
 
-ll LruSl::getWriteVictim2(){
-    return write_cache_map.getVictim2();
+
+
+bool LruSl::compareHotCache(const ll &key1, const ll &key2)
+{
+    return hotCache_map.compareHotness(key1, key2);
+}
+
+void LruSl::accessSSDCacheKey(const ll &key, const bool &isGet)
+{
+
+    ssdCache_map.Put(key, 0);
+    // cout<<"执行put后:"<<cache_map.Size()<<endl;
+}
+
+void LruSl::accessHotCacheKey(const ll &key, const bool &isGet)
+{
+
+    hotCache_map.Put(key, 0);
+    // cout<<"执行put后:"<<cache_map.Size()<<endl;
+}
+
+bool LruSl::isSSDCached(const ll &key)
+{
+    return ssdCache_map.Cached(key);
+}
+
+void LruSl::accessHotCacheKey(const ll &key, const bool &isGet)
+{
+
+    hotCache_map.Put(key, 0);
+    // cout<<"执行put后:"<<cache_map.Size()<<endl;
+}
+
+ll LruSl::getSSDVictim(){
+    return ssdCache_map.getVictim();
+}
+
+ll lruS1::getPrevoisKey(const ll &key) {
+    ssdCache_map.getPrevoisKey(key);
 }
 
 
+int LruS1:: 
 
 
 #endif /*_LRU_SIMULATOR_HPP_INCLUDED_*/

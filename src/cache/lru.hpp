@@ -70,6 +70,31 @@ class LRU : public ICachePolicy<Key>
         return lru_queue.back();
     }
 
+    bool compareHotness(const Key &key1, const Key &key2) 
+    {
+        auto it_key1 = std::find(lruQueue.begin(), lruQueue.end(), key1);
+        auto it_key2 = std::find(lruQueue.begin(), lruQueue.end(), key2);
+
+        
+        if (std::distance(lru_queue.begin(), it_key1) < std::distance(lru_queue.begin(), it_key2))
+        {
+            // hotness: key1 > key2
+            return 1;
+        }
+        else
+        {
+            // hotness: key1 < key2
+            return 0;
+        }
+    }
+
+    ll lruS1::getPrevoisKey(const Key &key)
+    {
+        auto it = key_finder.find(key);
+        auto previousIt = std::prev(it->second);
+        return *previousIt;
+    }
+
   private:
     std::list<Key> lru_queue;
     std::unordered_map<Key, lru_iterator> key_finder;
