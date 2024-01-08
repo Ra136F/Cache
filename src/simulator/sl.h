@@ -363,7 +363,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                         }
                         writeChunk(isReadCache,offset_cache,CHUNK_SIZE, key, t);
                         break;
-                    }else if(turn2>=10)
+                    }else if(turn2>=10000)
                     {
                         if(isReadCache==2)
                         {
