@@ -311,17 +311,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
     // if (!isWriteCache())
     //     return;
     // cache not full
-        // 使用 std::random_device 作为随机数种子
-    std::random_device rd;
 
-    // 使用 std::mt19937 作为随机数引擎
-    std::mt19937 gen(rd());
-
-    // 使用 std::uniform_real_distribution 定义生成 [0, 1) 之间的均匀分布的随机数
-    std::uniform_real_distribution<double> dis(0.0, 1.0);
-
-    // 生成随机数
-    double randomValue = dis(gen);
     if (!free_cache.empty())
         {
             accessSSDCacheKey(key, false);
@@ -342,13 +332,9 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
             assert(victim != -1);
             ll offset_cache = chunk_map_ssd[victim].offset_cache;
             int dirty = Dirty(&chunk_map_ssd[victim]);
-            // int action = qLearn(t);
+            int action = qLearn(t);
             //victim is dirty and smr is busy, then find next victim
-            int action=1;
-            if(randomValue>=0.5)
-            {
-                action=0;
-            }
+
             if (dirty == 1 && action == 0) {
                 int turn2=0;
                 while (true)
@@ -431,7 +417,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                     isDirty(&chunk_map_ssd[key]);
                 }
             }
-            // updateQtable(t, action);
+            updateQtable(t, action);
         }
 }
 
