@@ -67,6 +67,7 @@ CurrentState currentState;
 
 int calculate_timeInterval(long long currentTime, long long lastTime) {
     long long interval = currentTime - lastTime;
+    // cout<<"间隔:"<<interval<<endl;
     if (interval <= 500) {
         return 0;
     }
