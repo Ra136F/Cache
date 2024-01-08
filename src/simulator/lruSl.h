@@ -18,9 +18,9 @@ private:
     lru_cache_t<long long, bool> write_cache_map{HALF_SIZE};
 
     //read/write mixed cache
-    lru_cache_t<long long, bool> ssdCache_map{HALF_SIZE};
+    lru_cache_t<long long, bool> ssdCache_map{CACHE_SIZE};
     // bigger cache
-    lru_cache_t<long long, bool> hotCache_map{HALF_SIZE};
+    lru_cache_t<long long, bool> hotCache_map{CACHE_SIZE*2};
 
     bool isCached(const ll &key);
     bool isWriteCached(const ll &key);
@@ -29,10 +29,13 @@ private:
     void accessWriteKey(const ll &key, const bool &isGet);
     bool compareHotCache(const ll &key1, const ll &key2);
     void accessHotCacheKey(const ll &key, const bool &isGet);
+    void accessSSDCacheKey(const ll &key, const bool &isGet);
+    bool isSSDCached(const ll &key);
     ll getPrevoisKey(const ll &key);
     ll getVictim();
     ll getVictim2();
     ll getWriteVictim();
+    ll getSSDVictim();
 };
 
 LruSl::LruSl():Sl(){
@@ -59,13 +62,6 @@ ll LruSl::getVictim2(){
     return cache_map.getVictim2();
 }
 
-ll LruS1::getWV() {
-    return write_cache_map.get_W_Victim();
-}
-
-ll LruS1::getRV() {
-    return cache_map.get_R_Victim();
-}
 
 //判断写缓存中数据是否命中
 bool LruSl::isWriteCached(const ll &key)
@@ -76,9 +72,9 @@ bool LruSl::isWriteCached(const ll &key)
 bool LruSl::removeKey(const ll &key,int isReadCache)
 {
     if(isReadCache==1){
-        return cache_map.Remove(key);
+        return ssdCache_map.Remove(key);
     } else{
-        return write_cache_map.Remove(key);
+        return ssdCache_map.Remove(key);
     }
 }
 
@@ -117,23 +113,16 @@ bool LruSl::isSSDCached(const ll &key)
     return ssdCache_map.Cached(key);
 }
 
-void LruSl::accessHotCacheKey(const ll &key, const bool &isGet)
-{
-
-    hotCache_map.Put(key, 0);
-    // cout<<"执行put后:"<<cache_map.Size()<<endl;
-}
 
 ll LruSl::getSSDVictim(){
-    return ssdCache_map.getVictim();
+    return ssdCache_map.getVictim2();
 }
 
-ll lruS1::getPrevoisKey(const ll &key) {
-    ssdCache_map.getPrevoisKey(key);
+ll LruSl::getPrevoisKey(const ll &key) {
+    return ssdCache_map.getPrevoisKey(key);
 }
 
 
-int LruS1:: 
 
 
 #endif /*_LRU_SIMULATOR_HPP_INCLUDED_*/

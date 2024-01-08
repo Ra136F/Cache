@@ -79,6 +79,17 @@ class fixed_sized_cache
         return cache_items_map.size();
     }
 
+
+    bool compareHotness(const Key &key1, const Key &key2)
+    {
+        return cache_policy.compareHotness(key1,key2);
+    }
+
+
+    Key getPrevoisKey(const Key &key)
+    {
+        return cache_policy.getPrevoisKey(key);
+    }
     /**
      * \brief Put element into the cache
      * \param[in] key Key value to use

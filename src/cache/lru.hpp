@@ -4,6 +4,7 @@
 #include "cache_policy.hpp"
 #include <list>
 #include <unordered_map>
+#include <algorithm>
 
 namespace caches
 {
@@ -72,8 +73,8 @@ class LRU : public ICachePolicy<Key>
 
     bool compareHotness(const Key &key1, const Key &key2) 
     {
-        auto it_key1 = std::find(lruQueue.begin(), lruQueue.end(), key1);
-        auto it_key2 = std::find(lruQueue.begin(), lruQueue.end(), key2);
+        auto it_key1 = std::find(lru_queue.begin(), lru_queue.end(), key1);
+        auto it_key2 = std::find(lru_queue.begin(), lru_queue.end(), key2);
 
         
         if (std::distance(lru_queue.begin(), it_key1) < std::distance(lru_queue.begin(), it_key2))
@@ -88,7 +89,7 @@ class LRU : public ICachePolicy<Key>
         }
     }
 
-    ll lruS1::getPrevoisKey(const Key &key)
+    Key getPrevoisKey(const Key &key)
     {
         auto it = key_finder.find(key);
         auto previousIt = std::prev(it->second);
