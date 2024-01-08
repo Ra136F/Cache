@@ -4,8 +4,8 @@
 
 const PolicyType POLICY = policyTypes[3]; // 0~8
 
-const long long DISK_SIZE = 975396; // disk_capacity=DISK_SIZE*CHUNK_SIZE
-const long long CHUNK_NUM = 975396;
+const long long DISK_SIZE = 100000; // disk_capacity=DISK_SIZE*CHUNK_SIZE
+const long long CHUNK_NUM = 100000;
 
 const char *TRACE_PATH = "../trace/zipfian/10w_82_4k/tracea_run.txt";
 const char *CACHE_PATH = "/data2/Cache/cache_0.1.bin";

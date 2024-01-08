@@ -43,16 +43,16 @@ int lastAction = 0; //上一次执行的动作，1为写入smr，0为其他
 long long currentTime = 0; //当前动作时间
 long long lastTime = 0; //上一次动作时间
 long long llTime = 0; //上上次动作时间
-double qTable[4][4][2][2] = {0};
+double qTable[8][8][2][2] = {0};
 double rate = 0.1;
 //探索因子 
 double greedy = 0.8;
 //奖励函数时间阈值
  ////t1=90,t2=40000,t3=70000,t4=200000,t5=3000000
  //80 15000 25000 35000 100000
-double t1 = 1500;
+double t1 = 800;
 
-double t2 = 5000;
+double t2 = 10000;
 
 struct CurrentState {
 	//当前I/O间隔 
@@ -61,6 +61,12 @@ struct CurrentState {
   	int last_IO;
   	//上一次执行的动作 
   	int last_Action;
+
+    int ll;
+
+    int l;
+
+    int c;
 };
 
 CurrentState currentState;
@@ -68,18 +74,26 @@ CurrentState currentState;
 int calculate_timeInterval(long long currentTime, long long lastTime) {
     long long interval = currentTime - lastTime;
     // cout<<"间隔:"<<interval<<endl;
-    if (interval <= 500) {
+    if (interval <= 200) {
         return 0;
     }
-    else if (interval > 500 && interval <= 1500) {
+    else if (interval > 200 && interval <= 500) {
         return 1;
     }
-    else if (interval > 1500 && interval <= 4000)
+    else if (interval > 500 && interval <= 1000)
     {
         return 2;
     }
-    else {
+    else if(interval > 1000 && interval <= 2000) {
         return 3;
+    }else if(interval > 2000 && interval <= 3000){
+        return 4;
+    }else if(interval > 3000 && interval <= 5000){
+        return 5;
+    }else if(interval > 5000 && interval <= 10000){
+        return 6;
+    }else{
+        return 7;
     }
     
 }
@@ -320,9 +334,13 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
             chunk item = {key, offset_cache};
             chunk_map_ssd[key] = item;
             free_cache.pop_back();
-            if(isReadCache==2)
+            if (isReadCache == 2)
             {
                 isDirty(&chunk_map_ssd[key]);
+            }
+            else
+            {
+                chunk_map_ssd[key].dirty = 0;
             }
             writeChunk(1, offset_cache, CHUNK_SIZE, key,t);
         }
@@ -360,14 +378,23 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                         if(isReadCache==2)
                         {
                             isDirty(&chunk_map_ssd[key]);
+                        }else{
+                            chunk_map_ssd[key].dirty=0;
                         }
                         writeChunk(isReadCache,offset_cache,CHUNK_SIZE, key, t);
+                        updateQtable(t, action);
                         break;
-                    }else if(turn2>=10000)
+                    }else if(turn2>=1000)
                     {
+                        struct timeval current_t;
                         if(isReadCache==2)
                         {
                             writeDisk(key, t);
+                            gettimeofday(&current_t, NULL);
+                            currentTime = current_t.tv_sec * 1000000 + current_t.tv_usec;
+                            lastTime=currentState.c;
+                            llTime=currentState.l;
+                            lastAction=1;
                         }
                         break;
                     }
@@ -389,13 +416,17 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                     chunk_map_ssd[key].offset_cache = offset_cache;
                 }
                 chunk_map_ssd[victim].offset_cache = -1;
-                if(isReadCache==2)
+                if (isReadCache == 2)
                 {
                     isDirty(&chunk_map_ssd[key]);
                 }
+                else
+                {
+                    chunk_map_ssd[key].dirty = 0;
+                }
                 writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
                 writeBack(&chunk_map_ssd[victim], t);
-                // updateQtable(t, action);
+                updateQtable(t, action);
             }      
             // victim is clean
             else
@@ -417,8 +448,12 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                 {
                     isDirty(&chunk_map_ssd[key]);
                 }
-            }
-            updateQtable(t, action);
+                else
+                {
+                    chunk_map_ssd[key].dirty = 0;
+                }
+                 updateQtable(t, action);
+            }   
         }
 }
 
@@ -876,6 +911,9 @@ int Sl::qLearn(struct timeval t)
     gettimeofday(&current_t, NULL);
     currentTime = current_t.tv_sec * 1000000 + current_t.tv_usec;
     // record time interval
+    currentState.c=currentTime;
+    currentState.l=lastTime;
+    currentState.ll=llTime;
     currentState.current_IO = calculate_timeInterval(currentTime, lastTime);
     currentState.last_IO = calculate_timeInterval(lastTime, llTime);
     currentState.last_Action = lastAction;

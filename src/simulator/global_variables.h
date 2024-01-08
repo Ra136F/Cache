@@ -5,6 +5,6 @@
 #define GLOBAL_VARIABLES_H
 
 extern int global_integer;  // 声明全局整数变量
-extern double qTable[4][4][2][2];  //定义Q-Table
+  //定义Q-Table
 
 #endif // GLOBAL_VARIABLES_H
