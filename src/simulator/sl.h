@@ -239,7 +239,7 @@ bool Sl::readItem(vector<ll> &keys,struct timeval t)
     {
         if (isSSDCached(keys[i]))
         {
-            st.hit_trace_nums += 1;
+            st.read_hit_nums+=1;
             accessSSDCacheKey(keys[i], true);
             accessHotCacheKey(keys[i], true);
             readCache(chunk_map_ssd[keys[i]].offset_cache,isReadCache);
@@ -274,7 +274,6 @@ bool Sl::writeItem(vector<ll> &keys,struct timeval t)
     cAction = 1;
     lAction = cAction;
     llAction = lAction;
-
     bool isTraceHit = true;
     st.write_nums += keys.size();
     // cache hit
@@ -312,6 +311,17 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
     // if (!isWriteCache())
     //     return;
     // cache not full
+        // 使用 std::random_device 作为随机数种子
+    std::random_device rd;
+
+    // 使用 std::mt19937 作为随机数引擎
+    std::mt19937 gen(rd());
+
+    // 使用 std::uniform_real_distribution 定义生成 [0, 1) 之间的均匀分布的随机数
+    std::uniform_real_distribution<double> dis(0.0, 1.0);
+
+    // 生成随机数
+    double randomValue = dis(gen);
     if (!free_cache.empty())
         {
             accessSSDCacheKey(key, false);
@@ -332,8 +342,13 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
             assert(victim != -1);
             ll offset_cache = chunk_map_ssd[victim].offset_cache;
             int dirty = Dirty(&chunk_map_ssd[victim]);
-            int action = qLearn(t);
+            // int action = qLearn(t);
             //victim is dirty and smr is busy, then find next victim
+            int action=1;
+            if(randomValue>=0.5)
+            {
+                action=0;
+            }
             if (dirty == 1 && action == 0) {
                 int turn2=0;
                 while (true)
@@ -370,75 +385,6 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                         break;
                     }
                     turn2+=1;
-                    // current key's hotness is colder than current finding key, break,不写入
-                    // if (compareHotCache(key, nextVictim) == 0 && isReadCache == 1)
-                    // {
-                    //     break;
-                    // }
-                    // // victim is clean and it's not hotter than current key,
-                    // else if (Dirty(&chunk_map_ssd[nextVictim]) == 0 && compareHotCache(key, nextVictim) == 1 && isReadCache == 1)
-                    // {
-                    //     accessSSDCacheKey(key, true);
-                    //     if (chunk_map_ssd.count(key) == 0)
-                    //     {
-                    //         chunk item = {key, offset_cache};
-                    //         chunk_map_ssd[key] = item;
-                    //     }
-                    //     else
-                    //     {
-                    //         chunk_map_ssd[key].offset_cache = offset_cache;
-                    //     }
-                    //     chunk_map_ssd[nextVictim].offset_cache = -1;
-                    //     removeKey(nextVictim, 1);
-                    //     writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
-                    //     updateQtable(t, action);
-                    //     break;
-                    // }
-                    // // write IO is necessary to write in cache, so we replace clean data
-                    // else if (Dirty(&chunk_map_ssd[nextVictim]) == 0 && isReadCache == 2)
-                    // {
-                    //     accessSSDCacheKey(key, false);
-                    //     if (chunk_map_ssd.count(key) == 0)
-                    //     {
-                    //         chunk item = {key, offset_cache};
-                    //         chunk_map_ssd[key] = item;
-                    //     }
-                    //     else
-                    //     {
-                    //         chunk_map_ssd[key].offset_cache = offset_cache;
-                    //     }
-                    //     chunk_map_ssd[nextVictim].offset_cache = -1;
-                    //     removeKey(nextVictim, 1);
-                    //     writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
-                    //     updateQtable(t, action);
-                    //     break;
-                    // }
-                    // else if(isReadCache==2 && turn2>=10)
-                    // {
-                    //     if (compareHotCache(key, nextVictim) == 1)
-                    //     {
-                    //         accessSSDCacheKey(key, false);
-                    //         if (chunk_map_ssd.count(key) == 0)
-                    //         {
-                    //             chunk item = {key, offset_cache};
-                    //             chunk_map_ssd[key] = item;
-                    //         }
-                    //         else
-                    //         {
-                    //             chunk_map_ssd[key].offset_cache = offset_cache;
-                    //         }
-                    //         chunk_map_ssd[nextVictim].offset_cache=-1;
-                    //         removeKey(nextVictim, 1);
-                    //         writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
-                    //     }else{
-                    //         writeDisk(key, t);
-                    //     }
-                    // }
-                    // else
-                    // {
-                    //     turn2+=1;
-                    //     continue;
-                    // }
                 }
             }
             //victim is dirty and smr is available to write back, then find next victim
@@ -485,7 +431,7 @@ void Sl::writeCache(const ll &key,int isReadCache,struct timeval t)
                     isDirty(&chunk_map_ssd[key]);
                 }
             }
-            updateQtable(t, action);
+            // updateQtable(t, action);
         }
 }
 
