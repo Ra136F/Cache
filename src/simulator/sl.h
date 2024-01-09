@@ -325,7 +325,7 @@ void Sl::writeBack(chunk *arg)
 {
     if (arg->dirty == 1)
     {
-        backTime++;
+        
         arg->dirty = 0;
         writeDisk(arg->key);
     }
@@ -473,6 +473,7 @@ void Sl::coverageCache(chunk *arg)
 void Sl::writeDisk(const long long &key)
 {
     // cout << "writeDisk" << endl;
+    backTime++;
     writeChunk(false, key, CHUNK_SIZE);
 }
 
