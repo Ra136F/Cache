@@ -50,9 +50,9 @@ double greedy = 0.8;
 // 奖励函数时间阈值
 ////t1=90,t2=40000,t3=70000,t4=200000,t5=3000000
 // 80 15000 25000 35000 100000
-double t1 = 800;
+double t1 = 300;
 
-double t2 = 10000;
+double t2 = 2000;
 
 int backTime=0;
 int b1=0;
@@ -352,8 +352,8 @@ bool Sl::writeItem(vector<ll> &keys, struct timeval t)
 void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
 {
     // cout << "writeCache: ";
-    // if (!isWriteCache())
-    //     return;
+    if (!isWriteCache())
+        return;
     // cache not full
 
     if (!free_cache.empty())
@@ -363,14 +363,14 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
         chunk item = {key, offset_cache};
         chunk_map_ssd[key] = item;
         free_cache.pop_back();
-        if (isReadCache == 2)
-        {
-            isDirty(&chunk_map_ssd[key]);
-        }
-        else
-        {
-            chunk_map_ssd[key].dirty = 0;
-        }
+        // if (isReadCache == 2)
+        // {
+        //     isDirty(&chunk_map_ssd[key]);
+        // }
+        // else
+        // {
+        //     chunk_map_ssd[key].dirty = 0;
+        // }
         writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
     }
     // cache full
@@ -382,7 +382,6 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
         int dirty = Dirty(&chunk_map_ssd[victim]);
         int action = qLearn(t);
         // victim is dirty and smr is busy, then find next victim
-
         if (action == 0)
         {
             if (dirty == 1)
@@ -419,7 +418,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                         updateQtable(t, action);
                         break;
                     }
-                    else if (turn2 >= 5000)
+                    else if (turn2 >= 10000)
                     {
                         struct timeval current_t;
                         if (isReadCache == 2)
