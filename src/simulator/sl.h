@@ -193,7 +193,6 @@ int chooseAction(CurrentState currentState)
     return currentAction;
 }
 
-std::ofstream outputFile1;
 
 class Sl
 {
@@ -344,6 +343,7 @@ bool Sl::writeItem(vector<ll> &keys, struct timeval t)
             accessHotCacheKey(keys[i], false);
             // isDirty(&chunk_map_ssd[keys[i]]);
             writeCache(keys[i], 2, t);
+            // chunk_map_ssd[keys[i]].dirty=1;
         }
     }
     return isTraceHit;
@@ -363,14 +363,6 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
         chunk item = {key, offset_cache};
         chunk_map_ssd[key] = item;
         free_cache.pop_back();
-        // if (isReadCache == 2)
-        // {
-        //     isDirty(&chunk_map_ssd[key]);
-        // }
-        // else
-        // {
-        //     chunk_map_ssd[key].dirty = 0;
-        // }
         writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
     }
     // cache full
@@ -406,19 +398,11 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                             chunk_map_ssd[key].offset_cache = offset_cache;
                         }
                         chunk_map_ssd[victim].offset_cache = -1;
-                        // if (isReadCache == 2)
-                        // {
-                        //     isDirty(&chunk_map_ssd[key]);
-                        // }
-                        // else
-                        // {
-                        //     chunk_map_ssd[key].dirty = 0;
-                        // }
                         writeChunk(isReadCache, offset_cache, CHUNK_SIZE, key, t);
                         updateQtable(t, action);
                         break;
                     }
-                    else if (turn2 >= 10000)
+                    else if (turn2 >= 2000)
                     {
                         struct timeval current_t;
                         if (isReadCache == 2)
@@ -453,9 +437,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                 writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
             }
         }
-        // victim is dirty and smr is available to write back, then find next victim
-        else if (dirty == 1 && action == 1)
-        {
+        else{
             removeKey(victim, 1);
             accessSSDCacheKey(key, false);
             if (chunk_map_ssd.count(key) == 0)
@@ -468,44 +450,8 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                 chunk_map_ssd[key].offset_cache = offset_cache;
             }
             chunk_map_ssd[victim].offset_cache = -1;
-            // if (isReadCache == 2)
-            // {
-            //     isDirty(&chunk_map_ssd[key]);
-            // }
-            // else
-            // {
-            //     chunk_map_ssd[key].dirty = 0;
-            // }
-            writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
-            b2++;
+            writeChunk(2, offset_cache, CHUNK_SIZE, key, t);    
             writeBack(&chunk_map_ssd[victim], t);
-            updateQtable(t, action);
-        }
-        // victim is clean
-        else
-        {
-            removeKey(victim, 1);
-            accessSSDCacheKey(key, false);
-            if (chunk_map_ssd.count(key) == 0)
-            {
-                chunk item = {key, offset_cache};
-                chunk_map_ssd[key] = item;
-            }
-            else
-            {
-                chunk_map_ssd[key].offset_cache = offset_cache;
-            }
-            chunk_map_ssd[victim].offset_cache = -1;
-            chunk_map_ssd[victim].dirty = 0;
-            writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
-            // if (isReadCache == 2)
-            // {
-            //     isDirty(&chunk_map_ssd[key]);
-            // }
-            // else
-            // {
-            //     chunk_map_ssd[key].dirty = 0;
-            // }
             updateQtable(t, action);
         }
     }
@@ -632,8 +578,6 @@ void Sl::initFile()
     assert(fd_cache >= 0);
     fd_disk = open(DISK_PATH, O_RDWR | O_DIRECT, 0664);
     assert(fd_disk >= 0);
-
-    outputFile1.open("../result/cl.txt");
 }
 
 void Sl::closeFile()
@@ -641,7 +585,6 @@ void Sl::closeFile()
     close(fd_cache);
     close(fd_disk);
     close(fd_cache_w);
-    outputFile1.close();
 }
 
 void Sl::printFreeCache()
@@ -660,7 +603,7 @@ void Sl::writeBack(chunk *arg, struct timeval t)
     if (arg->dirty == 1)
     {
         arg->dirty = 0;
-        
+        b2++;
         writeDisk(arg->key, t);
     }
 }
