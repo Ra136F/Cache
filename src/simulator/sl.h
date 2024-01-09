@@ -55,7 +55,8 @@ double t1 = 800;
 double t2 = 10000;
 
 int backTime=0;
-
+int b1=0;
+int b2=0;
 struct CurrentState
 {
     // 当前I/O间隔
@@ -423,6 +424,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                         struct timeval current_t;
                         if (isReadCache == 2)
                         {
+                            b1++;
                             writeDisk(key, t);
                             gettimeofday(&current_t, NULL);
                             currentTime = current_t.tv_sec * 1000000 + current_t.tv_usec;
@@ -476,6 +478,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
             //     chunk_map_ssd[key].dirty = 0;
             // }
             writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
+            b2++;
             writeBack(&chunk_map_ssd[victim], t);
             updateQtable(t, action);
         }
@@ -571,7 +574,7 @@ void Sl::test()
     }
     gettimeofday(&t3, NULL);
     st.total_time = (t3.tv_sec - t0.tv_sec) * 1000000 + (t3.tv_usec - t0.tv_usec);
-    cout<<"写回磁盘次数:"<<backTime<<endl;
+    cout<<"写回磁盘次数:"<<backTime<<":b1:"<<b1<<":b2:"<<b2<<endl;
     st.getEndTime();
 }
 
@@ -658,7 +661,7 @@ void Sl::writeBack(chunk *arg, struct timeval t)
     if (arg->dirty == 1)
     {
         arg->dirty = 0;
-        backTime++;
+        
         writeDisk(arg->key, t);
     }
 }
@@ -909,6 +912,7 @@ bool Sl::Dirty(chunk *arg)
 void Sl::writeDisk(const long long &key, struct timeval t)
 {
 
+    backTime++;
     writeChunk(0, key, CHUNK_SIZE, key, t);
 }
 
