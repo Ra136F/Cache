@@ -54,6 +54,8 @@ double t1 = 800;
 
 double t2 = 10000;
 
+int backTime=0;
+
 struct CurrentState
 {
     // 当前I/O间隔
@@ -569,6 +571,7 @@ void Sl::test()
     }
     gettimeofday(&t3, NULL);
     st.total_time = (t3.tv_sec - t0.tv_sec) * 1000000 + (t3.tv_usec - t0.tv_usec);
+    cout<<"写回磁盘次数:"<<backTime<<endl;
     st.getEndTime();
 }
 
@@ -655,6 +658,7 @@ void Sl::writeBack(chunk *arg, struct timeval t)
     if (arg->dirty == 1)
     {
         arg->dirty = 0;
+        backTime++;
         writeDisk(arg->key, t);
     }
 }
