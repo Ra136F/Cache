@@ -41,6 +41,7 @@ public:
 protected:
     int fd_cache, fd_disk,fd_cache_w;
 
+    int backTime=0;
     long long curKey;
     vector<long long> free_cache;
     map<long long, chunk> chunk_map;
@@ -77,7 +78,7 @@ protected:
     void printChunkMap();
     void printFreeCache();
 
-    bool isWriteCache(); // Ê¹ÓÃËæ»ú²ßÂÔ£¬¸ù¾Ý¸ÅÂÊ¾ö¶¨ÊÇ·ñÐ´Èëcache
+    bool isWriteCache(); // Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô£ï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Ð´ï¿½ï¿½cache
 
     void checkFile(fstream &file);
 
@@ -239,6 +240,7 @@ void Sl::test()
             st.hit_trace_nums++;
         // printChunkMap();
     }
+    cout<<"å†™å›žç£ç›˜æ¬¡æ•°"<<backTime<<endl;
     gettimeofday(&t3, NULL);
     st.total_time = (t3.tv_sec - t0.tv_sec) * 1000000 + (t3.tv_usec - t0.tv_usec);
     st.getEndTime();
@@ -259,10 +261,10 @@ bool Sl::isWriteCache()
         return true;
 
     int min = 1, max = 100;
-    random_device seed;                           // Ó²¼þÉú³ÉËæ»úÊýÖÖ×Ó
-    ranlux48 engine(seed());                      // ÀûÓÃÖÖ×ÓÉú³ÉËæ»úÊýÒýÇæ
-    uniform_int_distribution<> distrib(min, max); // ÉèÖÃËæ»úÊý·¶Î§£¬²¢Îª¾ùÔÈ·Ö²¼
-    int random = distrib(engine);                 // Ëæ»úÊý
+    random_device seed;                           // Ó²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    ranlux48 engine(seed());                      // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    uniform_int_distribution<> distrib(min, max); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î§ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½È·Ö²ï¿½
+    int random = distrib(engine);                 // ï¿½ï¿½ï¿½ï¿½ï¿½
     // cout<<"random: "<<random<<endl;
     // printf("random: %d\n",random);
     if (random <= RANDOM_THRESHOLD)
@@ -323,6 +325,7 @@ void Sl::writeBack(chunk *arg)
 {
     if (arg->dirty == 1)
     {
+        backTime++;
         arg->dirty = 0;
         writeDisk(arg->key);
     }
