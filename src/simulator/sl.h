@@ -139,6 +139,7 @@ bool Sl::writeItem(vector<ll> &keys)
             isTraceHit = false;
             accessKey(keys[i], false); // [lirs] cache_map.Add(keys[i],0);
             writeCache(keys[i]);
+            chunk_map[keys[i]].dirty=1;
         }
     }
     return isTraceHit;
