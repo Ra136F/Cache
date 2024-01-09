@@ -406,14 +406,14 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                             chunk_map_ssd[key].offset_cache = offset_cache;
                         }
                         chunk_map_ssd[victim].offset_cache = -1;
-                        if (isReadCache == 2)
-                        {
-                            isDirty(&chunk_map_ssd[key]);
-                        }
-                        else
-                        {
-                            chunk_map_ssd[key].dirty = 0;
-                        }
+                        // if (isReadCache == 2)
+                        // {
+                        //     isDirty(&chunk_map_ssd[key]);
+                        // }
+                        // else
+                        // {
+                        //     chunk_map_ssd[key].dirty = 0;
+                        // }
                         writeChunk(isReadCache, offset_cache, CHUNK_SIZE, key, t);
                         updateQtable(t, action);
                         break;
@@ -467,14 +467,14 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                 chunk_map_ssd[key].offset_cache = offset_cache;
             }
             chunk_map_ssd[victim].offset_cache = -1;
-            if (isReadCache == 2)
-            {
-                isDirty(&chunk_map_ssd[key]);
-            }
-            else
-            {
-                chunk_map_ssd[key].dirty = 0;
-            }
+            // if (isReadCache == 2)
+            // {
+            //     isDirty(&chunk_map_ssd[key]);
+            // }
+            // else
+            // {
+            //     chunk_map_ssd[key].dirty = 0;
+            // }
             writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
             writeBack(&chunk_map_ssd[victim], t);
             updateQtable(t, action);
@@ -496,14 +496,14 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
             chunk_map_ssd[victim].offset_cache = -1;
             chunk_map_ssd[victim].dirty = 0;
             writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
-            if (isReadCache == 2)
-            {
-                isDirty(&chunk_map_ssd[key]);
-            }
-            else
-            {
-                chunk_map_ssd[key].dirty = 0;
-            }
+            // if (isReadCache == 2)
+            // {
+            //     isDirty(&chunk_map_ssd[key]);
+            // }
+            // else
+            // {
+            //     chunk_map_ssd[key].dirty = 0;
+            // }
             updateQtable(t, action);
         }
     }
