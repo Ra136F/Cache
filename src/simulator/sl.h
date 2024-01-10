@@ -43,20 +43,21 @@ int lastAction = 0;        // 上一次执行的动作，1为写入smr，0为其
 long long currentTime = 0; // 当前动作时间
 long long lastTime = 0;    // 上一次动作时间
 long long llTime = 0;      // 上上次动作时间
-double qTable[8][8][2][2] = {0};
+double qTable[5][5][2][2] = {0};
 double rate = 0.1;
 // 探索因子
 double greedy = 0.8;
 // 奖励函数时间阈值
 ////t1=90,t2=40000,t3=70000,t4=200000,t5=3000000
 // 80 15000 25000 35000 100000
-double t1 = 300;
+double t1 = 1000;
 
-double t2 = 2000;
+double t2 = 3000;
 
 int backTime=0;
 int b1=0;
 int b2=0;
+int actionTime=0;
 struct CurrentState
 {
     // 当前I/O间隔
@@ -69,7 +70,6 @@ struct CurrentState
     int ll;
 
     int l;
-
     int c;
 };
 
@@ -78,39 +78,77 @@ CurrentState currentState;
 int calculate_timeInterval(long long currentTime, long long lastTime)
 {
     long long interval = currentTime - lastTime;
-    // cout<<"间隔:"<<interval<<endl;
-    if (interval <= 200)
+    cout<<"间隔:"<<interval<<endl;
+    // if(interval<=12000)
+    // {
+    //     return 0;
+    // }else if(interval>12000&&interval<=12300)
+    // {
+    //     return 1;
+    // }else if(interval>12300&&interval<=12700)
+    // {
+    //     return 2;
+    // }else if(interval>12700&&interval<=13000)
+    // {
+    //     return 3;
+    // }else
+    // {
+    //     return 4;
+    // }
+
+    if (interval <= 3000)
     {
         return 0;
     }
-    else if (interval > 200 && interval <= 500)
+    else if (interval > 3000 && interval <= 5000)
     {
         return 1;
     }
-    else if (interval > 500 && interval <= 1000)
+    else if (interval > 5000 && interval <= 10000)
     {
         return 2;
     }
-    else if (interval > 1000 && interval <= 2000)
+    else if (interval > 10000 && interval <= 20000)
     {
         return 3;
     }
-    else if (interval > 2000 && interval <= 3000)
+    else
     {
         return 4;
     }
-    else if (interval > 3000 && interval <= 5000)
-    {
-        return 5;
-    }
-    else if (interval > 5000 && interval <= 10000)
-    {
-        return 6;
-    }
-    else
-    {
-        return 7;
-    }
+
+    // if (interval <= 3000)
+    // {
+    //     return 0;
+    // }
+    // else if (interval > 3000 && interval <= 6000)
+    // {
+    //     return 1;
+    // }
+    // else if (interval > 6000 && interval <= 9000)
+    // {
+    //     return 2;
+    // }
+    // else if (interval > 9000 && interval <= 10000)
+    // {
+    //     return 3;
+    // }
+    // else if (interval > 10000 && interval <= 13000)
+    // {
+    //     return 4;
+    // }
+    // else if (interval > 13000 && interval <= 16000)
+    // {
+    //     return 5;
+    // }
+    // else if (interval > 16000 && interval <= 20000)
+    // {
+    //     return 6;
+    // }
+    // else
+    // {
+    //     return 7;
+    // }
 }
 
 double get_expected_max_score(CurrentState currentState)
@@ -236,8 +274,8 @@ protected:
     void isDirty(chunk *arg);
     bool Dirty(chunk *arg);
 
-    void normRead(bool isCache, const long long &offset, const long long &size);
-    void normWrite(bool isCache, const long long &offset, const long long &size);
+    void normRead(int isCache, const long long &offset, const long long &size);
+    void normWrite(int isCache, const long long &offset, const long long &size);
     void odirectRead(int isCache, const long long &offset, const long long &size);
     void odirectWrite(int isCache, const long long &offset, const long long &size, const ll &key, struct timeval t);
 
@@ -375,10 +413,13 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
         assert(victim != -1);
         ll offset_cache = chunk_map_ssd[victim].offset_cache;
         int dirty = Dirty(&chunk_map_ssd[victim]);
-        int action = qLearn(t);
+        int action=1;
+        action = qLearn(t);
         // victim is dirty and smr is busy, then find next victim
+        // action=1;
         if (action == 0)
         {
+            actionTime++;
             if (dirty == 1)
             {
                 int turn2 = 0;
@@ -409,7 +450,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                         updateQtable(t, action);
                         break;
                     }
-                    else if (turn2 >= 2000)
+                    else if (turn2 >= 50 )
                     {
                         struct timeval current_t;
                         if (isReadCache == 2)
@@ -449,7 +490,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                 updateQtable(t, action);
             }
         }
-        else{
+        else {
             removeKey(victim, 1);
             accessSSDCacheKey(key, false);
             if (chunk_map_ssd.count(key) == 0)
@@ -535,7 +576,7 @@ void Sl::test()
     }
     gettimeofday(&t3, NULL);
     st.total_time = (t3.tv_sec - t0.tv_sec) * 1000000 + (t3.tv_usec - t0.tv_usec);
-    cout<<"写回磁盘次数:"<<backTime<<":b1:"<<b1<<":b2:"<<b2<<endl;
+    cout<<"写回磁盘次数:"<<backTime<<":b1:"<<b1<<":b2:"<<b2<<"磁盘繁忙次数:"<<actionTime<<endl;
     st.getEndTime();
 }
 
@@ -588,11 +629,11 @@ void Sl::init()
 
 void Sl::initFile()
 {
-    fd_cache_w = open(CACHE_PATH_W, O_RDWR | O_DIRECT, 0664);
+    fd_cache_w = open(CACHE_PATH_W, O_RDWR, 0664);
     assert(fd_cache_w >= 0);
-    fd_cache = open(CACHE_PATH, O_RDWR | O_DIRECT, 0664);
+    fd_cache = open(CACHE_PATH, O_RDWR , 0664);
     assert(fd_cache >= 0);
-    fd_disk = open(DISK_PATH, O_RDWR | O_DIRECT, 0664);
+    fd_disk = open(DISK_PATH, O_RDWR, 0664);
     assert(fd_disk >= 0);
 }
 
@@ -624,13 +665,13 @@ void Sl::writeBack(chunk *arg, struct timeval t)
     }
 }
 
-void Sl::normRead(bool isCache, const long long &offset, const long long &size)
+void Sl::normRead(int isCache, const long long &offset, const long long &size)
 {
     int fd = -1;
-    if (isCache)
-        fd = fd_cache;
-    else
+    if (isCache==0)
         fd = fd_disk;
+    else
+        fd = fd_cache;
     assert(fd >= 0);
     char buffer[CHUNK_SIZE];
 
@@ -640,13 +681,13 @@ void Sl::normRead(bool isCache, const long long &offset, const long long &size)
     // close(fd);
 }
 
-void Sl::normWrite(bool isCache, const long long &offset, const long long &size)
+void Sl::normWrite(int isCache, const long long &offset, const long long &size)
 {
     int fd = -1;
-    if (isCache)
-        fd = fd_cache;
-    else
+    if (isCache==0)
         fd = fd_disk;
+    else
+        fd = fd_cache;
     assert(fd >= 0);
     char buffer[CHUNK_SIZE] = "Ram15978";
 
@@ -735,52 +776,6 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
     // }
 }
 
-void Sl::write_to_readCache(const ll &key, int isReadCache, struct timeval t)
-{
-    accessWriteKey(key, false);
-    ll victim = getWriteVictim();
-    chunk_map_w[victim].offset_cache = -1;
-    // cout << "writeCache: ";
-    if (!isWriteCache())
-        return;
-    // cache not full
-    if (isReadCache == 1)
-    {
-        if (!free_cache.empty())
-
-        {
-            // cout << "cache not full" << endl;
-            ll offset_cache = free_cache.back();
-            chunk item = {key, offset_cache};
-            chunk_map[key] = item;
-            chunk_map[key].dirty = 1;
-            free_cache.pop_back();
-            writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
-        }
-        // cache full
-        else
-        {
-            ll victim = getVictim();
-            // removeKey(victim, 1);
-            assert(victim != -1);
-            ll offset_cache = chunk_map[victim].offset_cache;
-            chunk_map[victim].offset_cache = -1;
-            if (chunk_map.count(key) == 0)
-
-            {
-                chunk item = {key, offset_cache};
-                chunk_map[key] = item;
-            }
-            else
-            {
-                chunk_map[key].offset_cache = offset_cache;
-            }
-            chunk_map[key].dirty = 1;
-            writeChunk(1, offset_cache, CHUNK_SIZE, key, t);
-            writeBack(&chunk_map[victim], t);
-        }
-    }
-}
 
 // isCache�޸�Ϊint���ͣ�1��ʾ�����棬2��ʾд��������
 void Sl::readChunk(int isCache, const long long &offset, const long long &size)

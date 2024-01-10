@@ -20,7 +20,7 @@ private:
     //read/write mixed cache
     lru_cache_t<long long, bool> ssdCache_map{CACHE_SIZE};
     // bigger cache
-    lru_cache_t<long long, bool> hotCache_map{CACHE_SIZE*2};
+    lru_cache_t<long long, bool> hotCache_map{P_SIZE};
 
     bool isCached(const ll &key);
     bool isWriteCached(const ll &key);
