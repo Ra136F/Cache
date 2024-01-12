@@ -57,6 +57,7 @@ double t2 = 3000;
 int backTime=0;
 int b1=0;
 int b2=0;
+int f1=0; // 磁盘满的次数
 int actionTime=0;
 struct CurrentState
 {
@@ -339,10 +340,11 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
                     isTraceHit = false;
                     // removeKey(keys[i], 1);
                     // accessSSDCacheKey(keys[i], false);
-                    accessHotCacheKey(keys[i], true);
+                    
                     // cout<<"accessKey"<<endl;
                     readDisk(keys[i]);
                     writeCache(keys[i], 1, t);
+                    accessHotCacheKey(keys[i], true);
                 }
             }
         }
@@ -378,10 +380,10 @@ bool Sl::writeItem(vector<ll> &keys, struct timeval t)
         {
             isTraceHit = false;
             // accessSSDCacheKey(keys[i], false);
-            accessHotCacheKey(keys[i], false);
+           
             // isDirty(&chunk_map_ssd[keys[i]]);
             writeCache(keys[i], 2, t);
-            
+             accessHotCacheKey(keys[i], false);
         }
     }
     return isTraceHit;
@@ -409,6 +411,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
     // cache full
     else
     {
+        f1++;
         ll victim = getSSDVictim();
         assert(victim != -1);
         ll offset_cache = chunk_map_ssd[victim].offset_cache;
@@ -416,7 +419,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
         int action=1;
         action = qLearn(t);
         // victim is dirty and smr is busy, then find next victim
-        // action=1;
+        action=1;
         if (action == 0)
         {
             actionTime++;
@@ -577,7 +580,9 @@ void Sl::test()
     }
     gettimeofday(&t3, NULL);
     st.total_time = (t3.tv_sec - t0.tv_sec) * 1000000 + (t3.tv_usec - t0.tv_usec);
-    cout<<"写回磁盘次数:"<<backTime<<":b1:"<<b1<<":b2:"<<b2<<"磁盘繁忙次数:"<<actionTime<<endl;
+    cout<<"写回磁盘次数:"<<backTime<<":b1:"<<b1<<":b2:"<<b2<<"磁盘繁忙次数:"<<actionTime<<"磁盘满的次数:"<<f1<<endl;
+    st.total_wb=backTime;
+    st.total_f=f1;
     st.getEndTime();
 }
 

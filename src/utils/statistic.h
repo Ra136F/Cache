@@ -31,6 +31,8 @@ public:
         total_request_size=0;
         
         total_latency = 0;
+        total_wb=0;
+        total_f=0;
     }
 
     //unsigned long long choose_nth(vector<unsigned long long> &a,int startIndex, int endIndex, int n);
@@ -45,7 +47,8 @@ public:
     string caching_policy;
 
     char startTime[20],endTime[20];
-
+    int total_wb;
+    int total_f;
     long long read_hit_nums;
     long long read_nums;
 
@@ -55,19 +58,19 @@ public:
     long long hit_trace_nums;
     long long total_trace_nums;
 
-    //¼ÇÂ¼´¦ÀíÃ¿¸ötraceÊ¹ÓÃµÄÊ±¼ä(ns)
+    //ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½traceÊ¹ï¿½Ãµï¿½Ê±ï¿½ï¿½(ns)
     // vector<double> latency_v;
     // double total_time;
     // double average_latency;
 
 
-    long long total_time;//float total_time;//unsigned long long total_time;//ÕûÌåµÄÔËÐÐÊ±¼ä
+    long long total_time;//float total_time;//unsigned long long total_time;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 
     vector<long long> latency_v;
-    long long total_latency;//float total_latency;//unsigned long long total_latency;//ËùÓÐtraceµÄÊ±¼äÖ®ºÍ
-    float average_latency;//unsigned long long average_latency;//ËùÓÐtraceµÄÆ½¾ùÊ±¼ä
+    long long total_latency;//float total_latency;//unsigned long long total_latency;//ï¿½ï¿½ï¿½ï¿½traceï¿½ï¿½Ê±ï¿½ï¿½Ö®ï¿½ï¿½
+    float average_latency;//unsigned long long average_latency;//ï¿½ï¿½ï¿½ï¿½traceï¿½ï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½
 
-    //¼ÇÂ¼Ã¿¸ötraceÊµ¼Ê·ÃÎÊµÄ¿éµÄ¸öÊý
+    //ï¿½ï¿½Â¼Ã¿ï¿½ï¿½traceÊµï¿½Ê·ï¿½ï¿½ÊµÄ¿ï¿½Ä¸ï¿½ï¿½ï¿½
     vector<long long> request_size_v;
     long long total_request_size;
 
@@ -78,11 +81,11 @@ void Statistic::getCurrentTimeFormatted(char *formattedTime) {
     time_t timep;
     struct tm *p;
 
-    // »ñÈ¡µ±Ç°Ê±¼ä
+    // ï¿½ï¿½È¡ï¿½ï¿½Ç°Ê±ï¿½ï¿½
     time(&timep);
     p = localtime(&timep);
 
-    // ¸ñÊ½»¯Ê±¼äÎª×Ö·û´®
+    // ï¿½ï¿½Ê½ï¿½ï¿½Ê±ï¿½ï¿½Îªï¿½Ö·ï¿½ï¿½ï¿½
     snprintf(formattedTime, 20, "%d/%02d/%02d %02d:%02d:%02d",
             1900 + p->tm_year, 1 + p->tm_mon, p->tm_mday,
             p->tm_hour, p->tm_min, p->tm_sec);
@@ -99,7 +102,7 @@ void Statistic::getEndTime(){
 unsigned long long Statistic::choose_nth(vector<unsigned long long> &a,int startIndex, int endIndex, int n){
     unsigned long long midOne = a[startIndex];
     int i = startIndex, j = endIndex;
-    if(i == j) //µÝ¹é³ö¿ÚÖ®Ò»
+    if(i == j) //ï¿½Ý¹ï¿½ï¿½ï¿½ï¿½Ö®Ò»
         return a[i];
 
     if(i < j)
@@ -119,19 +122,19 @@ unsigned long long Statistic::choose_nth(vector<unsigned long long> &a,int start
                 break;
             }
         }
-        a[i] = midOne;//Ö§µã¹éÎ»
+        a[i] = midOne;//Ö§ï¿½ï¿½ï¿½Î»
 
-        int th = endIndex - i + 1;//¼ÆËãÏÂ±êÎªiµÄÊýµÚ¼¸´ó
+        int th = endIndex - i + 1;//ï¿½ï¿½ï¿½ï¿½ï¿½Â±ï¿½Îªiï¿½ï¿½ï¿½ï¿½ï¿½Ú¼ï¿½ï¿½ï¿½
 
-        if(th == n)//ÕýºÃÕÒµ½
+        if(th == n)//ï¿½ï¿½ï¿½ï¿½ï¿½Òµï¿½
         {
             return a[i];
         }
         else
         {
-            if(th > n )//ÔÚÖ§µãÓÒ±ßÕÒ
+            if(th > n )//ï¿½ï¿½Ö§ï¿½ï¿½ï¿½Ò±ï¿½ï¿½ï¿½
                 return choose_nth(a, i + 1, endIndex, n);
-            else//ÔÚÖ§µã×ó±ßÕÒµÚ(n-th)´ó,ÒòÎªÓÒ±ßth¸öÊý¶¼±ÈÖ§µã´ó
+            else//ï¿½ï¿½Ö§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òµï¿½(n-th)ï¿½ï¿½,ï¿½ï¿½Îªï¿½Ò±ï¿½thï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö§ï¿½ï¿½ï¿½
                 return choose_nth(a, startIndex, i - 1, n - th);
         }
     }
@@ -208,7 +211,7 @@ void Statistic::printStatistic(){
         // cout<<"tail latency: P95="<<percentile(0.95)/1e6<<" ms, P99="<<percentile(0.99)/1e6<<" ms"<<endl;
     }
 
-    // p·ÖÎ»ÊýÎ»ÖÃµÄÖµ = Î»ÓÚp·ÖÎ»ÊýÈ¡ÕûºóÎ»ÖÃµÄÖµ + £¨Î»ÓÚp·ÖÎ»ÊýÈ¡ÕûÏÂÒ»Î»Î»ÖÃµÄÖµ - Î»ÓÚp·ÖÎ»ÊýÈ¡ÕûºóÎ»ÖÃµÄÖµ£©*£¨p·ÖÎ»ÊýÎ»ÖÃ - p·ÖÎ»ÊýÎ»ÖÃÈ¡Õû£©
+    // pï¿½ï¿½Î»ï¿½ï¿½Î»ï¿½Ãµï¿½Öµ = Î»ï¿½ï¿½pï¿½ï¿½Î»ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½Î»ï¿½Ãµï¿½Öµ + ï¿½ï¿½Î»ï¿½ï¿½pï¿½ï¿½Î»ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½Ò»Î»Î»ï¿½Ãµï¿½Öµ - Î»ï¿½ï¿½pï¿½ï¿½Î»ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½Î»ï¿½Ãµï¿½Öµï¿½ï¿½*ï¿½ï¿½pï¿½ï¿½Î»ï¿½ï¿½Î»ï¿½ï¿½ - pï¿½ï¿½Î»ï¿½ï¿½Î»ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½
     
 
 }
@@ -273,6 +276,7 @@ void Statistic::writeStatistic(){
     if(total_time!=0){
         fout<<"bandwidth: "<<total_request_size*1.0*CHUNK_SIZE/1024/1024 / (total_time*1.0/1e6)<<" MB/s"<<endl;//fout<<"bandwidth: "<<total_request_size*1.0*CHUNK_SIZE/1024/1024 / (total_time*1.0/1e9)<<" MB/s"<<endl;
     }
+    fout<<"å†™å›žç£ç›˜æ¬¡æ•°:"<<total_wb<<"ç£ç›˜æ»¡çš„æ¬¡æ•°:"<<total_f<<endl;
     fout<<"power: ";
     fout.close();
 }
