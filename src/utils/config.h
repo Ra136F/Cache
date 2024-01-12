@@ -10,7 +10,7 @@ const long long CHUNK_NUM = 975396;
 const char *TRACE_PATH = "../trace/zipfian/10w_82_4k/tracea_run.txt";
 const char *CACHE_PATH = "/data2/Cache/cache_0.1.bin";
 const char *CACHE_PATH_W = "/data2/Cache/cache_0.2.bin";
-const long long CACHE_SIZE = CHUNK_NUM * 0.1;
+const long long CACHE_SIZE = CHUNK_NUM * 0.06;
 
 const long long HALF_SIZE = CACHE_SIZE*0.5;
 const long long P_SIZE = CACHE_SIZE*2;
@@ -20,7 +20,7 @@ typedef long long ll;
 const long long CHUNK_SIZE = 4 * 1024; // 4kB
 
 
-const bool O_DIRECT_ON = false;
+const bool O_DIRECT_ON = true;
 const bool RANDOM_ON = false;
 const int RANDOM_THRESHOLD = 0; 
 

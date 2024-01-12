@@ -450,7 +450,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                         updateQtable(t, action);
                         break;
                     }
-                    else if (turn2 >= 50 )
+                    else if (turn2 >= 20 )
                     {
                         struct timeval current_t;
                         if (isReadCache == 2)
@@ -459,9 +459,10 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                             writeDisk(key, t);
                             gettimeofday(&current_t, NULL);
                             currentTime = current_t.tv_sec * 1000000 + current_t.tv_usec;
-                            lastTime = currentState.c;
-                            llTime = currentState.l;
-                            lastAction = 1;
+                            // lastTime = currentState.c;
+                            // llTime = currentState.l;
+                            // lastAction = 1;
+                            updateQtable(t, 1);
                         }
                         break;
                     }
@@ -629,11 +630,11 @@ void Sl::init()
 
 void Sl::initFile()
 {
-    fd_cache_w = open(CACHE_PATH_W, O_RDWR, 0664);
+    fd_cache_w = open(CACHE_PATH_W, O_RDWR | O_DIRECT, 0664);
     assert(fd_cache_w >= 0);
-    fd_cache = open(CACHE_PATH, O_RDWR , 0664);
+    fd_cache = open(CACHE_PATH, O_RDWR | O_DIRECT , 0664);
     assert(fd_cache >= 0);
-    fd_disk = open(DISK_PATH, O_RDWR, 0664);
+    fd_disk = open(DISK_PATH, O_RDWR | O_DIRECT, 0664);
     assert(fd_disk >= 0);
 }
 
