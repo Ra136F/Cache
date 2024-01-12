@@ -79,7 +79,7 @@ CurrentState currentState;
 int calculate_timeInterval(long long currentTime, long long lastTime)
 {
     long long interval = currentTime - lastTime;
-    cout<<"间隔:"<<interval<<endl;
+    // cout<<"间隔:"<<interval<<endl;
     // if(interval<=12000)
     // {
     //     return 0;
@@ -319,6 +319,7 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
     llAction = lAction;
 
     st.read_nums += keys.size();
+    struct timeval s1,s2;
     // cache hit
     for (int i = 0; i < keys.size(); i++)
     {
@@ -327,7 +328,10 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
             st.read_hit_nums += 1;
             accessSSDCacheKey(keys[i], true);
             accessHotCacheKey(keys[i], true);
+            gettimeofday(&s1, NULL);
             readCache(chunk_map_ssd[keys[i]].offset_cache, isReadCache);
+            gettimeofday(&s2, NULL);
+            cout<<"读缓存时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
             keys[i] = -1;
         }
         else
@@ -342,9 +346,15 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
                     // accessSSDCacheKey(keys[i], false);
                     
                     // cout<<"accessKey"<<endl;
+                    gettimeofday(&s1, NULL);
                     readDisk(keys[i]);
+                    gettimeofday(&s2, NULL);
+                    cout<<"读磁盘时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<",";
+                     accessHotCacheKey(keys[i], true);
                     writeCache(keys[i], 1, t);
-                    accessHotCacheKey(keys[i], true);
+                    gettimeofday(&s2, NULL);
+                    cout<<"未命中时间时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
+                   
                 }
             }
         }
@@ -360,6 +370,7 @@ bool Sl::writeItem(vector<ll> &keys, struct timeval t)
     llAction = lAction;
     bool isTraceHit = true;
     st.write_nums += keys.size();
+    struct timeval s1,s2;
     // cache hit
     for (int i = 0; i < keys.size(); i++)
     {
@@ -368,7 +379,10 @@ bool Sl::writeItem(vector<ll> &keys, struct timeval t)
             st.write_hit_nums += 1;
             accessSSDCacheKey(keys[i], true);
             accessHotCacheKey(keys[i], true);
+            gettimeofday(&s1, NULL);
             coverageCache(&chunk_map_ssd[keys[i]], t);
+            gettimeofday(&s2, NULL);
+            cout<<"覆盖缓存时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
             // chunk_map[keys[i]].offset_cache=-1;
             keys[i] = -1;
         }
@@ -382,8 +396,12 @@ bool Sl::writeItem(vector<ll> &keys, struct timeval t)
             // accessSSDCacheKey(keys[i], false);
            
             // isDirty(&chunk_map_ssd[keys[i]]);
+            gettimeofday(&s1, NULL);
+            accessHotCacheKey(keys[i], false);
             writeCache(keys[i], 2, t);
-             accessHotCacheKey(keys[i], false);
+            gettimeofday(&s2, NULL);
+            cout<<"未命中时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
+            
         }
     }
     return isTraceHit;
@@ -560,11 +578,11 @@ void Sl::test()
         switch (type)
         {
         case 0:
-            cout << "read" << endl;
+            // cout << "read" << endl;
             isTraceHit = readItem(keys, t1);
             break;
         case 1:
-            cout << "write" << endl;
+            // cout << "write" << endl;
             isTraceHit = writeItem(keys, t1);
             break;
         }
