@@ -79,23 +79,6 @@ CurrentState currentState;
 int calculate_timeInterval(long long currentTime, long long lastTime)
 {
     long long interval = currentTime - lastTime;
-    // cout<<"间隔:"<<interval<<endl;
-    // if(interval<=12000)
-    // {
-    //     return 0;
-    // }else if(interval>12000&&interval<=12300)
-    // {
-    //     return 1;
-    // }else if(interval>12300&&interval<=12700)
-    // {
-    //     return 2;
-    // }else if(interval>12700&&interval<=13000)
-    // {
-    //     return 3;
-    // }else
-    // {
-    //     return 4;
-    // }
 
     if (interval <= 3000)
     {
@@ -117,39 +100,6 @@ int calculate_timeInterval(long long currentTime, long long lastTime)
     {
         return 4;
     }
-
-    // if (interval <= 3000)
-    // {
-    //     return 0;
-    // }
-    // else if (interval > 3000 && interval <= 6000)
-    // {
-    //     return 1;
-    // }
-    // else if (interval > 6000 && interval <= 9000)
-    // {
-    //     return 2;
-    // }
-    // else if (interval > 9000 && interval <= 10000)
-    // {
-    //     return 3;
-    // }
-    // else if (interval > 10000 && interval <= 13000)
-    // {
-    //     return 4;
-    // }
-    // else if (interval > 13000 && interval <= 16000)
-    // {
-    //     return 5;
-    // }
-    // else if (interval > 16000 && interval <= 20000)
-    // {
-    //     return 6;
-    // }
-    // else
-    // {
-    //     return 7;
-    // }
 }
 
 double get_expected_max_score(CurrentState currentState)
