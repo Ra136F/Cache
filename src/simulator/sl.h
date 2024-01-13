@@ -267,7 +267,6 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
     cAction = 0;
     lAction = cAction;
     llAction = lAction;
-
     st.read_nums += keys.size();
     struct timeval s1,s2;
     // cache hit
@@ -284,29 +283,21 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
             cout<<"读缓存时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
             keys[i] = -1;
         }
-        else
+    }
+    for (int i = 0; i < keys.size(); i++)
+    {
+        if (keys[i] != -1)
         {
-            for (int i = 0; i < keys.size(); i++)
-            {
-                if (keys[i] != -1)
-                {
-                    // cout<<"读未命中"<<keys[i]<<endl;
-                    isTraceHit = false;
-                    // removeKey(keys[i], 1);
-                    // accessSSDCacheKey(keys[i], false);
-                    
-                    // cout<<"accessKey"<<endl;
-                    gettimeofday(&s1, NULL);
-                    readDisk(keys[i]);
-                    gettimeofday(&s2, NULL);
-                    cout<<"读磁盘时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<",";
-                    accessHotCacheKey(keys[i], true);
-                    writeCache(keys[i], 1, t);
-                    gettimeofday(&s2, NULL);
-                    cout<<"未命中时间时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
-                   
-                }
-            }
+            // cout<<"读未命中"<<keys[i]<<endl;
+            isTraceHit = false;
+            gettimeofday(&s1, NULL);
+            readDisk(keys[i]);
+            gettimeofday(&s2, NULL);
+            cout << "读磁盘时间:" << (s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec) << ",";
+            accessHotCacheKey(keys[i], true);
+            writeCache(keys[i], 1, t);
+            gettimeofday(&s2, NULL);
+            cout << "未命中时间时间:" << (s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec) << endl;
         }
     }
     return isTraceHit;
@@ -700,9 +691,10 @@ void Sl::odirectWrite(int isCache, const long long &offset, const long long &siz
         fd = fd_cache;
     else if (isCache == 2)
         fd = fd_cache;
-    else
+    else if(isCache==0)
         fd = fd_disk;
     assert(fd>0);
+    cout<<"介质:"<<isCache<<endl;
     char *buffer = nullptr;
     int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
     assert(res == 0);
