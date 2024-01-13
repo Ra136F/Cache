@@ -673,7 +673,7 @@ void Sl::odirectRead(int isCache, const long long &offset, const long long &size
     else
         fd = fd_disk;
     assert(fd >= 0);
-
+    cout<<"介质:"<<isCache<<endl;
     char *buffer = nullptr;
     int res = posix_memalign((void **)&buffer, CHUNK_SIZE, size);
     assert(res == 0);
