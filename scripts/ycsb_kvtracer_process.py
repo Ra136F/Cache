@@ -29,6 +29,7 @@ def read_trace_from_file(file_path):
                 if len(user) > 1:
                     key = user.split('user')[1]
                     keys.append(key)
+                    #
                     print(key)
         # print(len(keys))
         return keys, types
@@ -79,7 +80,7 @@ def output_file(file_path, indexes, types, chunk_size, disk_size, trace_size):
 
 if __name__ == '__main__':
     # process trace
-    file_name = "tracea_runw.txt"
+    file_name = "tracea_run55-1w.txt"
     input_path = "/home/lxf/work/code/Caching-Policy/Caching-Policy/trace/zipfian/"
     # output_path = "D:/Projects/Caching-Policy/Caching-Policy/trace/YCSB-KVTracer/"
     output_path = "/home/lxf/work/code/Caching-Policy/Caching-Policy/trace/zipfian/10w_82_4k/"

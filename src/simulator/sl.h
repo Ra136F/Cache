@@ -238,20 +238,20 @@ protected:
     void printFreeCache();
 
     bool isWriteCache();
-    virtual bool isWriteCached(const ll &key) = 0;
+    // virtual bool isWriteCached(const ll &key) = 0;
     void checkFile(fstream &file);
     void remove(const ll &key, int isReadCache, struct timeval t);
-    virtual bool isCached(const ll &key) = 0;
+    // virtual bool isCached(const ll &key) = 0;
     virtual bool isSSDCached(const ll &key) = 0;
-    virtual void accessKey(const ll &key, const bool &isGet) = 0;
-    virtual void accessWriteKey(const ll &key, const bool &isGet) = 0;
+    // virtual void accessKey(const ll &key, const bool &isGet) = 0;
+    // virtual void accessWriteKey(const ll &key, const bool &isGet) = 0;
     virtual void accessSSDCacheKey(const ll &key, const bool &isGet) = 0;
     virtual void accessHotCacheKey(const ll &key, const bool &isGet) = 0;
     virtual bool removeKey(const ll &key, int isReadCache) = 0;
     virtual bool compareHotCache(const ll &key1, const ll &key2) = 0;
-    virtual ll getVictim() = 0;
-    virtual ll getVictim2() = 0;
-    virtual ll getWriteVictim() = 0;
+    // virtual ll getVictim() = 0;
+    // virtual ll getVictim2() = 0;
+    // virtual ll getWriteVictim() = 0;
     virtual ll getSSDVictim() = 0;
     virtual ll getPrevoisKey(const ll &key) = 0;
 
@@ -262,7 +262,7 @@ protected:
 bool Sl::readItem(vector<ll> &keys, struct timeval t)
 {
     //
-    int isReadCache = 0;
+    int isReadCache = 1;
     bool isTraceHit = true;
     cAction = 0;
     lAction = cAction;
@@ -279,7 +279,7 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
             accessSSDCacheKey(keys[i], true);
             accessHotCacheKey(keys[i], true);
             gettimeofday(&s1, NULL);
-            readCache(chunk_map_ssd[keys[i]].offset_cache, isReadCache);
+            readCache(chunk_map_ssd[keys[i]].offset_cache, 1);
             gettimeofday(&s2, NULL);
             cout<<"读缓存时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
             keys[i] = -1;
@@ -300,7 +300,7 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
                     readDisk(keys[i]);
                     gettimeofday(&s2, NULL);
                     cout<<"读磁盘时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<",";
-                     accessHotCacheKey(keys[i], true);
+                    accessHotCacheKey(keys[i], true);
                     writeCache(keys[i], 1, t);
                     gettimeofday(&s2, NULL);
                     cout<<"未命中时间时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
@@ -849,55 +849,55 @@ void Sl::statistic()
     st.writeStatistic();
 }
 
-void Sl::remove(const ll &key, int isReadCache, struct timeval t)
-{
-    auto status = removeKey(key, 1);
-    assert(status);
-    // assert(isCached(key));
-    accessWriteKey(key, false);
-    // if (isReadCache == 1)
-    // {
-    //     free_cache.push_back(chunk_map[key].offset_cache);
-    // }
-    // else
-    // {
-    //     free_cache_w.push_back(chunk_map_w[key].offset_cache);
-    // }
-    // free_cache.push_back(chunk_map[key].offset_cache);
+// void Sl::remove(const ll &key, int isReadCache, struct timeval t)
+// {
+//     auto status = removeKey(key, 1);
+//     assert(status);
+//     // assert(isCached(key));
+//     accessWriteKey(key, false);
+//     // if (isReadCache == 1)
+//     // {
+//     //     free_cache.push_back(chunk_map[key].offset_cache);
+//     // }
+//     // else
+//     // {
+//     //     free_cache_w.push_back(chunk_map_w[key].offset_cache);
+//     // }
+//     // free_cache.push_back(chunk_map[key].offset_cache);
 
-    if (!free_cache_w.empty())
-    {
+//     if (!free_cache_w.empty())
+//     {
 
-        ll offset_cache = chunk_map[key].offset_cache;
-        free_cache.push_back(free_cache_w.back());
-        chunk item = {key, offset_cache};
-        chunk_map_w[key] = item;
-        free_cache_w.pop_back();
-        writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
-        chunk_map[key].offset_cache = -1;
-    }
-    else
-    {
-        ll victim = getWriteVictim();
-        assert(victim != -1);
-        ll offset_cache = chunk_map[key].offset_cache;
-        free_cache.push_back(chunk_map_w[victim].offset_cache);
-        chunk_map_w[victim].offset_cache = -1;
-        if (chunk_map_w.count(key) == 0)
-        {
-            chunk item = {key, offset_cache};
-            chunk_map_w[key] = item;
-        }
-        else
-        {
-            chunk_map_w[key].offset_cache = offset_cache;
-        }
-        chunk_map[key].offset_cache = -1;
-        // chunk_map[key].dirty=1;
-        writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
-        writeBack(&chunk_map_w[victim], t);
-    }
-}
+//         ll offset_cache = chunk_map[key].offset_cache;
+//         free_cache.push_back(free_cache_w.back());
+//         chunk item = {key, offset_cache};
+//         chunk_map_w[key] = item;
+//         free_cache_w.pop_back();
+//         writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
+//         chunk_map[key].offset_cache = -1;
+//     }
+//     else
+//     {
+//         ll victim = getWriteVictim();
+//         assert(victim != -1);
+//         ll offset_cache = chunk_map[key].offset_cache;
+//         free_cache.push_back(chunk_map_w[victim].offset_cache);
+//         chunk_map_w[victim].offset_cache = -1;
+//         if (chunk_map_w.count(key) == 0)
+//         {
+//             chunk item = {key, offset_cache};
+//             chunk_map_w[key] = item;
+//         }
+//         else
+//         {
+//             chunk_map_w[key].offset_cache = offset_cache;
+//         }
+//         chunk_map[key].offset_cache = -1;
+//         // chunk_map[key].dirty=1;
+//         writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
+//         writeBack(&chunk_map_w[victim], t);
+//     }
+// }
 
 int Sl::qLearn(struct timeval t)
 {
