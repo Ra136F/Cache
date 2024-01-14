@@ -33,6 +33,8 @@ public:
         total_latency = 0;
         total_wb=0;
         total_f=0;
+        read_disk_time=0;
+        read_cache_time=0;
     }
 
     //unsigned long long choose_nth(vector<unsigned long long> &a,int startIndex, int endIndex, int n);
@@ -46,6 +48,9 @@ public:
 
     string caching_policy;
 
+
+    int read_disk_time;
+    int read_cache_time;
     char startTime[20],endTime[20];
     int total_wb;
     int total_f;
@@ -277,6 +282,7 @@ void Statistic::writeStatistic(){
         fout<<"bandwidth: "<<total_request_size*1.0*CHUNK_SIZE/1024/1024 / (total_time*1.0/1e6)<<" MB/s"<<endl;//fout<<"bandwidth: "<<total_request_size*1.0*CHUNK_SIZE/1024/1024 / (total_time*1.0/1e9)<<" MB/s"<<endl;
     }
     fout<<"写回磁盘次数:"<<total_wb<<"磁盘满的次数:"<<total_f<<endl;
+    fout<<"读磁盘时间:"<<read_disk_time<<",读缓存时间:"<<read_cache_time<<endl;
     fout<<"power: ";
     fout.close();
 }

@@ -281,6 +281,7 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
             readCache(chunk_map_ssd[keys[i]].offset_cache, 1);
             gettimeofday(&s2, NULL);
             cout<<"读缓存时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
+            st.read_cache_time+=(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec);
             keys[i] = -1;
         }
     }
@@ -294,6 +295,7 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
             readDisk(keys[i]);
             gettimeofday(&s2, NULL);
             cout << "读磁盘时间:" << (s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec) << ",";
+            st.read_disk_time+=(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec);
             accessHotCacheKey(keys[i], true);
             writeCache(keys[i], 1, t);
             gettimeofday(&s2, NULL);
@@ -324,6 +326,7 @@ bool Sl::writeItem(vector<ll> &keys, struct timeval t)
             coverageCache(&chunk_map_ssd[keys[i]], t);
             gettimeofday(&s2, NULL);
             cout<<"覆盖缓存时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
+            st.read_cache_time+=(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec);
             // chunk_map[keys[i]].offset_cache=-1;
             keys[i] = -1;
         }
@@ -342,6 +345,7 @@ bool Sl::writeItem(vector<ll> &keys, struct timeval t)
             writeCache(keys[i], 2, t);
             gettimeofday(&s2, NULL);
             cout<<"未命中时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
+            st.read_disk_time+=(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec);
             
         }
     }
@@ -594,7 +598,7 @@ void Sl::init()
 
 void Sl::initFile()
 {
-    fd_cache_w = open(CACHE_PATH_W, O_RDWR | O_DIRECT, 0664);
+    fd_cache_w = open(CACHE_PATH, O_RDWR | O_DIRECT, 0664);
     assert(fd_cache_w >= 0);
     fd_cache = open(CACHE_PATH, O_RDWR | O_DIRECT , 0664);
     assert(fd_cache >= 0);
@@ -786,7 +790,7 @@ void Sl::readCache(const ll &offset_cache, int isReadCache)
 {
     // printf("readCache\n");
     assert(offset_cache != -1);
-    readChunk(isReadCache, offset_cache, CHUNK_SIZE);
+    readChunk(1, offset_cache, CHUNK_SIZE);
 }
 
 void Sl::readDisk(const long long &key)
