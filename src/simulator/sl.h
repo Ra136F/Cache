@@ -1,6 +1,8 @@
 #ifndef _LRU_SIMULATORHPP_INCLUDED_
 #define _LRU_SIMULATORHPP_INCLUDED_
 
+#include <bits/types/struct_timeval.h>
+#include <cstddef>
 #include <iostream>
 #include <fstream>
 #include <streambuf>
@@ -458,8 +460,13 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
             }
         }
         else {
+            struct timeval t1,t2;
+            gettimeofday(&t1,NULL);
             removeKey(victim, 1);
             accessSSDCacheKey(key, false);
+             gettimeofday(&t2,NULL);
+            long long detailT=(t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec);
+            st.t1+=detailT;
             if (chunk_map_ssd.count(key) == 0)
             {
                 chunk item = {key, offset_cache};
@@ -471,6 +478,8 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
             }
             chunk_map_ssd[victim].offset_cache = -1;
             writeChunk(isReadCache, offset_cache, CHUNK_SIZE, key, t);
+           
+
             if (isReadCache == 2)
             {
                 chunk_map_ssd[key].dirty = 1;

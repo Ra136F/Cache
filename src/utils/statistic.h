@@ -35,6 +35,7 @@ public:
         total_f=0;
         read_disk_time=0;
         read_cache_time=0;
+        t1=0;
     }
 
     //unsigned long long choose_nth(vector<unsigned long long> &a,int startIndex, int endIndex, int n);
@@ -49,6 +50,8 @@ public:
     string caching_policy;
 
 
+
+    long long t1;
     int read_disk_time;
     int read_cache_time;
     char startTime[20],endTime[20];
@@ -283,6 +286,7 @@ void Statistic::writeStatistic(){
     }
     fout<<"写回磁盘次数:"<<total_wb<<"磁盘满的次数:"<<total_f<<endl;
     fout<<"未命中时间:"<<read_disk_time/1e6<<"s,读缓存时间:"<<read_cache_time/1e6<<"s"<<endl;
+    fout<<"t1:"<<t1*1.0/1e6<<"s"<<endl;
     fout<<"power: ";
     fout.close();
 }
