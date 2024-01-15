@@ -295,11 +295,11 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
             readDisk(keys[i]);
             gettimeofday(&s2, NULL);
             cout << "读磁盘时间:" << (s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec) << ",";
-            st.read_disk_time+=(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec);
             accessHotCacheKey(keys[i], true);
             writeCache(keys[i], 1, t);
             gettimeofday(&s2, NULL);
             cout << "未命中时间时间:" << (s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec) << endl;
+            st.read_disk_time+=(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec);
         }
     }
     return isTraceHit;
@@ -470,7 +470,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                 chunk_map_ssd[key].offset_cache = offset_cache;
             }
             chunk_map_ssd[victim].offset_cache = -1;
-            writeChunk(2, offset_cache, CHUNK_SIZE, key, t);
+            writeChunk(isReadCache, offset_cache, CHUNK_SIZE, key, t);
             if (isReadCache == 2)
             {
                 chunk_map_ssd[key].dirty = 1;

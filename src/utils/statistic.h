@@ -282,7 +282,7 @@ void Statistic::writeStatistic(){
         fout<<"bandwidth: "<<total_request_size*1.0*CHUNK_SIZE/1024/1024 / (total_time*1.0/1e6)<<" MB/s"<<endl;//fout<<"bandwidth: "<<total_request_size*1.0*CHUNK_SIZE/1024/1024 / (total_time*1.0/1e9)<<" MB/s"<<endl;
     }
     fout<<"写回磁盘次数:"<<total_wb<<"磁盘满的次数:"<<total_f<<endl;
-    fout<<"读磁盘时间:"<<read_disk_time<<",读缓存时间:"<<read_cache_time<<endl;
+    fout<<"未命中时间:"<<read_disk_time/1e6<<"s,读缓存时间:"<<read_cache_time/1e6<<"s"<<endl;
     fout<<"power: ";
     fout.close();
 }
