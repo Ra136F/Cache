@@ -297,9 +297,9 @@ bool Sl::readItem(vector<ll> &keys, struct timeval t)
             readDisk(keys[i]);
             gettimeofday(&s2, NULL);
             cout << "读磁盘时间:" << (s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec) << ",";
-            accessHotCacheKey(keys[i], true);
             writeCache(keys[i], 1, t);
             gettimeofday(&s2, NULL);
+             accessHotCacheKey(keys[i], true);
             cout << "未命中时间时间:" << (s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec) << endl;
             st.read_disk_time+=(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec);
         }
@@ -343,9 +343,10 @@ bool Sl::writeItem(vector<ll> &keys, struct timeval t)
            
             // isDirty(&chunk_map_ssd[keys[i]]);
             gettimeofday(&s1, NULL);
-            accessHotCacheKey(keys[i], false);
+            
             writeCache(keys[i], 2, t);
             gettimeofday(&s2, NULL);
+            accessHotCacheKey(keys[i], false);
             cout<<"未命中时间:"<<(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec)<<endl;
             st.read_disk_time+=(s2.tv_sec - s1.tv_sec) * 1000000 + (s2.tv_usec - s1.tv_usec);
             
@@ -384,7 +385,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
         int action=1;
         action = qLearn(t);
         // victim is dirty and smr is busy, then find next victim
-        action=1;
+        // action=1;
         if (action == 0)
         {
             actionTime++;
@@ -418,7 +419,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
                         updateQtable(t, action);
                         break;
                     }
-                    else if (turn2 >= 20 )
+                    else if (turn2 >= 10 )
                     {
                         struct timeval current_t;
                         if (isReadCache == 2)
@@ -439,7 +440,7 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
             }
             else
             {
-                removeKey(victim, 1);
+                // removeKey(victim, 1);
                 accessSSDCacheKey(key, false);
                 if (chunk_map_ssd.count(key) == 0)
                 {
@@ -462,9 +463,9 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
         else {
             struct timeval t1,t2;
             gettimeofday(&t1,NULL);
-            removeKey(victim, 1);
+            // removeKey(victim, 1);
             accessSSDCacheKey(key, false);
-             gettimeofday(&t2,NULL);
+            gettimeofday(&t2,NULL);
             long long detailT=(t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec);
             st.t1+=detailT;
             if (chunk_map_ssd.count(key) == 0)
@@ -478,8 +479,6 @@ void Sl::writeCache(const ll &key, int isReadCache, struct timeval t)
             }
             chunk_map_ssd[victim].offset_cache = -1;
             writeChunk(isReadCache, offset_cache, CHUNK_SIZE, key, t);
-           
-
             if (isReadCache == 2)
             {
                 chunk_map_ssd[key].dirty = 1;

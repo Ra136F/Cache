@@ -91,6 +91,8 @@ bool LruSl::removeKey(const ll &key,int isReadCache)
 
 bool LruSl::compareHotCache(const ll &key1, const ll &key2)
 {
+    if(!hotCache_map.Cached(key1))
+        return 0;
     return hotCache_map.compareHotness(key1, key2);
 }
 

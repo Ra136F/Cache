@@ -52,8 +52,8 @@ public:
 
 
     long long t1;
-    int read_disk_time;
-    int read_cache_time;
+    long long  read_disk_time;
+    long long  read_cache_time;
     char startTime[20],endTime[20];
     int total_wb;
     int total_f;

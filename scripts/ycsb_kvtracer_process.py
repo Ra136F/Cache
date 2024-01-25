@@ -17,21 +17,15 @@ def read_trace_from_file(file_path):
                 # print(op)
                 if op == 'GET':
                     types.append(0)
-                    user = line.split(':')[1]+':'+line.split(':')[2]
                 else:
                     types.append(1)
-                    start_index = line.find('user')
-                    second_user_index = line.find('user', start_index + 1)
-                    end_index = line.find('|', second_user_index)
-                    user = line[second_user_index:end_index]
                 # key
-                # print(user)
+                user = line.split(':')[1]
                 if len(user) > 1:
                     key = user.split('user')[1]
                     keys.append(key)
-                    #
-                    print(key)
-        # print(len(keys))
+                    # print(key)
+
         return keys, types
 
 
@@ -80,7 +74,7 @@ def output_file(file_path, indexes, types, chunk_size, disk_size, trace_size):
 
 if __name__ == '__main__':
     # process trace
-    file_name = "tracea_runw-1w.txt"
+    file_name = "tracea_runex.txt"
     input_path = "/home/lxf/work/code/Caching-Policy/Caching-Policy/trace/zipfian/"
     # output_path = "D:/Projects/Caching-Policy/Caching-Policy/trace/YCSB-KVTracer/"
     output_path = "/home/lxf/work/code/Caching-Policy/Caching-Policy/trace/zipfian/10w_82_4k/"
