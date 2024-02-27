@@ -227,7 +227,7 @@ void Statistic::printStatistic(){
 void Statistic::writeStatistic(){
     saveLatency();
 
-    ofstream fout("../result/statistic.txt");
+    ofstream fout("../result/r2/statistic.txt");
     
     if(!fout.is_open()){
         cerr<<"error: can not open result file"<<endl;
